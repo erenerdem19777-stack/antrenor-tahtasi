@@ -169,9 +169,13 @@ body.m-home #home,body.m-lib #lib{display:flex}
 .bar{height:8px;border-radius:5px;background:var(--bg);overflow:hidden;margin-top:6px}.bar i{display:block;height:100%;width:0;background:var(--acc);transition:width .2s}
 .vids{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin-top:10px}
 .vids video{width:100%;border-radius:10px;background:#000;aspect-ratio:16/9}
+#mbody textarea{width:100%;min-height:96px;margin-top:10px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--tx);font:500 15px/1.45 system-ui;padding:10px 12px;-webkit-user-select:text;user-select:text;resize:vertical}
+.vtp{margin-top:10px;font-size:13px;line-height:1.5;color:#d3ddd6}.vtp ol{margin:6px 0 0;padding-left:20px;display:flex;flex-direction:column;gap:4px}.vtp b{color:var(--acc)}
+.vtw{margin-top:8px;color:#ffb020;font-size:12.5px}
 /* mode visibility */
 body.m-drill #tools,body.m-drill #items,body.m-drill #fbar,body.m-drill .bo{display:none!important}
-body:not(.m-drill) #dpanel,body:not(.m-drill) #dbar,body:not(.m-drill) .dr,body:not(.m-drill) #capOv{display:none!important}
+body:not(.m-drill) #dpanel,body:not(.m-drill) #dbar,body:not(.m-drill) .dr{display:none!important}
+body.m-home #capOv,body.m-lib #capOv{display:none!important}
 @media (orientation:portrait){
  #main{flex-direction:column}
  .side{width:auto!important;height:58px;flex-direction:row;padding:0 6px;overflow-x:auto;overflow-y:hidden}
@@ -287,6 +291,7 @@ body:not(.m-drill) #dpanel,body:not(.m-drill) #dbar,body:not(.m-drill) .dr,body:
   <button class="btn" id="bAddFrame" title="Yeni kare ekle" data-i="plus"></button>
   <button class="btn" id="bDelFrame" title="Kareyi sil" data-i="minus"></button>
   <button class="btn" id="bGhost" title="Önceki karenin izini göster" data-i="ghost"></button>
+  <button class="btn hl" id="bVoiceT" title="Sesle ya da yazıyla taktik anlat" data-i="mic"><span class="hide-p">Sesle taktik</span></button>
   <button class="btn hl" id="bVideo" title="Animasyonu video yap ve paylaş" data-i="video"><span class="hide-p">Video</span></button>
  </footer>
  <footer id="dbar">
@@ -373,6 +378,7 @@ const ICONS={
  share:'<circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="M8.2 10.8l7.6-4.4M8.2 13.2l7.6 4.4"/>',
  video:'<rect x="3" y="6" width="13" height="12" rx="2"/><path d="M16 10l5-3v10l-5-3z"/>',
  wa:'<path d="M4 20l1.3-4A8 8 0 1112 20a8 8 0 01-4-1z"/><path d="M9 9.5c0 3 2.5 5.5 5.5 5.5l1-1.5-2-1-1 .8a4 4 0 01-1.8-1.8l.8-1-1-2z" fill="currentColor" stroke="none"/>',
+ mic:'<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0014 0M12 18v3M8 21h8"/>',
  book:'<path d="M4 5h6a2 2 0 012 2v13a2 2 0 00-2-2H4zM20 5h-6a2 2 0 00-2 2v13a2 2 0 012-2h6z"/>'
 };
 const icon=n=>`<svg viewBox="0 0 24 24">${ICONS[n]}</svg>`;
@@ -1622,8 +1628,8 @@ function play(loop){
  playing=true; selObj=null; const tok=++playTok;
  let i=fi>=frames.length-1?0:fi; fi=i; let t0=performance.now(), phase='hold', loopN=0, ready=true;
  const narr=idx=>{
-  if(mode!=='drill'||!S.voice||loopN>0||!curDrill){ready=true;return;}
-  let txt=stepText(idx); if(idx===0) txt=`${curDrill.ad}. ${curDrill.amac} ${txt}`;
+  if(!S.voice||loopN>0||!(mode==='drill'?curDrill:frames.some(f=>f.cap))){ready=true;return;}
+  let txt=stepText(idx); if(idx===0&&mode==='drill') txt=`${curDrill.ad}. ${curDrill.amac} ${txt}`;
   if(!txt){ready=true;return;}
   ready=false; TTS.speak(txt).then(()=>{if(tok===playTok) ready=true;});
  };
@@ -1724,6 +1730,7 @@ function updateUI(){
   return;
  }
  if(mode!=='board') return;
+ {const n=frames.length-1, c=frames[fi]&&frames[fi].cap; $('#capOv').innerHTML=c?`<b>${fi+1}/${n}</b>${esc(c)}`:'';}
  $$('.tool').forEach(b=>b.classList.toggle('on',b.dataset.tool===tool&&!placing));
  $$('[data-add]').forEach(b=>b.classList.toggle('on',b.dataset.add===placing));
  $$('#colors .sw').forEach(s=>s.classList.toggle('on',s.dataset.c===color));
@@ -2165,7 +2172,226 @@ function openBoardVideo(){
   ${voicePicker()}
   <button class="bigb wa" id="mkV">${icon('wa')}Videoyu WhatsApp’ta gönder (${frames.length} kare)</button><div id="vbox"></div>`,m=>{
   m.querySelector('#sC').onclick=closeModal; bindVoicePicker(m);
-  m.querySelector('#mkV').onclick=()=>{const t=m.querySelector('#vt').value.trim()||'Taktik'; videoUI(m,[{label:t,opts:{fr:clone(frames),view,title:t,sub:S.team||'',caps:false}}],`⚽ ${t}`,true);};
+  m.querySelector('#mkV').onclick=()=>{const t=m.querySelector('#vt').value.trim()||'Taktik'; videoUI(m,[{label:t,opts:{fr:clone(frames),view,title:t,sub:S.team||'',caps:frames.some(f=>f.cap)}}],`⚽ ${t}`,true);};
+ });
+}
+
+/* =================== SESLE TAKTİK =================== */
+const TL='a-zçğıöşü';
+const NW=['sıfır','bir','iki','üç','dört','beş','altı','yedi','sekiz','dokuz'];
+const NWV={sıfır:0,bir:1,iki:2,üç:3,dört:4,beş:5,altı:6,yedi:7,sekiz:8,dokuz:9};
+const SUF="(?:'?(?:yla|yle|nun|nün|nın|nin|dan|den|tan|ten|ya|ye|yu|yü|yı|yi|la|le|un|ün|ın|in|da|de|ta|te|u|ü|ı|i|a|e))?";
+const MENTION_RE=()=>new RegExp(`(?:(kırmızı|mavi|rakip|bizim)(?:\\s+takım(?:ın|dan|ımızın|ımız)?)?\\s+)?(?:(\\d{1,2})${SUF}|on\\s?(${NW.slice(1).join('|')})${SUF}|(on)|(${NW.join('|')})${SUF})(?![${TL}0-9])(\\s+numara(?:lı|yı|ya|nın|dan)?)?`,'g');
+const TEAMNAME={A:'Kırmızı',B:'Mavi'};
+const GROUPS=[
+ [/(defans|savunma)\s*(bloğu|bloku|hattı|dörtlüsü|oyuncuları)?|dörtlü\s*(hat|savunma)|arka\s*dörtlü/,'def','defans bloğu'],
+ [/stoper(ler)?/,'cb','stoperler'],[/bek(ler)?(?![${TL}])/,'fb','bekler'],
+ [/orta\s*saha(lar|cılar| hattı)?(?![${TL}]*ya\b)/,'mid','orta saha'],
+ [/forvet(ler)?|hücum\s*hattı|hücumcular|santrafor/,'fwd','forvetler'],
+ [/kanat(lar| oyuncuları)(?![${TL}]*a\b)/,'wing','kanatlar'],
+ [/(tüm|bütün)\s*takım|takımın tamamı|(?<![${TL}])blok(?![${TL}])/,'all','tüm takım']
+];
+const SIMUL=/onunla|onu takip|ona eşlik|aynı anda|bu sırada|o sırada|eş ?zamanlı|bu arada|birlikte/;
+function teamOfColor(c){return /mavi|rakip/.test(c)?'B':'A';}
+function uvOf(o,T){return T==='A'?[o.x,o.y]:[105-o.x,68-o.y];}
+function xyOf(u,v,T){u=Math.max(1,Math.min(104,u)); v=Math.max(2,Math.min(66,v)); return T==='A'?[u,v]:[105-u,68-v];}
+function baseTeam(t){return t==='GKA'?'A':t==='GKB'?'B':t;}
+function findMentions(cl){
+ const out=[]; const re=MENTION_RE(); let m;
+ while((m=re.exec(cl))){
+  const col=m[1], num=m[2]!=null?+m[2]:m[3]?10+NWV[m[3]]:m[4]?10:m[5]!=null?NWV[m[5]]:null, numara=!!m[6];
+  if(num==null) continue;
+  if(m[2]==null&&!col&&!numara) continue;   // "bir pas" gibi sözcükleri oyuncu sanma
+  out.push({team:col?teamOfColor(col):null,num,idx:m.index,len:m[0].length});
+ }
+ return out;
+}
+function parseTactic(text,objects){
+ const objs=clone(objects); const steps=[]; const warn=[];
+ let ball=objs.find(o=>o.type==='ball');
+ let lastTeam='A', lastSubj=null, owner=null;
+ const moved=[]; // {o,from}
+ const pName=o=>`${TEAMNAME[baseTeam(o.team)]} ${o.num}`;
+ const findP=(T,n)=>objs.find(o=>o.type==='player'&&baseTeam(o.team)===T&&String(o.num)===String(n));
+ const field=T=>objs.filter(o=>o.type==='player'&&o.team===T);
+ function group(T,key){
+  const f=field(T).map(o=>({o,u:uvOf(o,T)[0],v:uvOf(o,T)[1]})).sort((a,b)=>a.u-b.u), n=f.length;
+  const nd=n>=10?4:n>=7?3:2, defs=f.slice(0,nd), rest=f.slice(nd);
+  const maxU=n?f[n-1].u:0, fw=rest.filter(p=>p.u>=maxU-6).slice(-3), mids=rest.filter(p=>!fw.includes(p));
+  const byV=a=>a.slice().sort((x,y)=>x.v-y.v);
+  if(key==='def') return defs.map(p=>p.o);
+  if(key==='fb'){const b=byV(defs); return [b[0],b[b.length-1]].filter(Boolean).map(p=>p.o);}
+  if(key==='cb'){const b=byV(defs); return b.slice(1,-1).map(p=>p.o);}
+  if(key==='mid') return mids.map(p=>p.o);
+  if(key==='fwd') return fw.map(p=>p.o);
+  if(key==='wing') return rest.filter(p=>p.v<16||p.v>52).map(p=>p.o);
+  return f.map(p=>p.o);
+ }
+ const clauses=text.replace(/\s+/g,' ').replace(/\s(aynı anda|bu sırada|o sırada|eş ?zamanlı( olarak)?)\s/gi,', $1 ').split(/[.;!?\n]+|,|\s(?:ve|sonra|ardından|daha sonra|sonrasında)\s/i).map(s=>s.trim()).filter(s=>s.length>2);
+ let cur=null;
+ const newStep=()=>{cur={from:clone(objs),parts:[],desc:[],ballSet:false}; steps.push(cur);};
+ for(const raw of clauses){
+  const cl=' '+raw.toLocaleLowerCase('tr-TR').replace(/[’`]/g,"'")+' ';
+  if(!cur||!SIMUL.test(cl)) newStep();
+  cur.parts.push(raw.charAt(0).toLocaleUpperCase('tr-TR')+raw.slice(1));
+  const ms=findMentions(cl);
+  const colM=cl.match(/kırmızı|mavi|rakip|bizim/); if(colM) lastTeam=teamOfColor(colM[0]);
+  let gKey=null,gIdx=1e9,gName='';
+  for(const [re,k,nm] of GROUPS){const r=new RegExp(re.source.replace(/\$\{TL\}/g,TL)); const m=cl.match(r); if(m&&m.index<gIdx){gKey=k;gIdx=m.index;gName=nm;}}
+  // özne
+  let subj=null, subjGroup=null, objsM=ms;
+  if(ms.length&&(gKey==null||ms[0].idx<gIdx)){
+   const T=ms[0].team||lastTeam; const p=findP(T,ms[0].num);
+   if(!p){warn.push(`“${raw}”: ${TEAMNAME[T]} ${ms[0].num} tahtada yok`); continue;}
+   subj=p; lastTeam=T; objsM=ms.slice(1);
+  } else if(gKey){
+   subjGroup={T:lastTeam,key:gKey,name:gName,members:group(lastTeam,gKey)};
+  } else if(lastSubj) subj=lastSubj;
+  else {warn.push(`“${raw}”: kimin hareket ettiğini anlayamadım`); continue;}
+  const sT=subj?baseTeam(subj.team):lastTeam, oT=sT==='A'?'B':'A';
+  const wantSame=/pas|orta|aktar|oynar|verir|atar/.test(cl)&&!/baskı|pres|takip|markaj/.test(cl);
+  const objP=objsM.map(m=>m.team?findP(m.team,m.num):(findP(wantSame?sT:oT,m.num)||findP(wantSame?oT:sT,m.num))).filter(Boolean);
+  const otherRef=()=>objP[0]||(lastSubj&&lastSubj!==subj?lastSubj:null);
+  // ---- grup hareketi
+  if(subjGroup){
+   const {T,members,name}=subjGroup; if(!members.length){warn.push(`“${raw}”: ${TEAMNAME[T]} ${name} bulunamadı`); continue;}
+   const bv=ball?uvOf(ball,T)[1]:34; let did=[];
+   members.forEach(o=>{
+    let [u,v]=uvOf(o,T); const f0=[o.x,o.y];
+    if(/pres|baskı/.test(cl)){u+=12; v+= (bv-v)*.25; did[0]='pres yapar';}
+    else if(/yukarı|ileri|öne|yüksel|hattı çık|çıkar|çıkıyor/.test(cl)&&!/geri|aşağı/.test(cl)){u+=8; did[0]='ileri çıkar';}
+    if(/aşağı|geri|çekil|derine in|iner|düşer/.test(cl)){u-=8; did[0]='geri çekilir';}
+    if(/sola/.test(cl)){v-=8; did[1]='sola kayar';} if(/sağa/.test(cl)){v+=8; did[1]='sağa kayar';}
+    if(/topa doğru|topun (olduğu )?taraf/.test(cl)){v+=Math.sign(bv-v)*Math.min(8,Math.abs(bv-v)); did[1]='topa doğru kayar';}
+    if(/daral|kompakt|sıkış|kapan/.test(cl)){v=34+(v-34)*.7; did[2]='daralır';}
+    if(/genişle|açıl|yayıl/.test(cl)){v=34+(v-34)*1.3; did[2]='genişler';}
+    [o.x,o.y]=xyOf(u,v,T); o.x=R2(o.x); o.y=R2(o.y); moved.push({o,from:f0});
+   });
+   did=did.filter(Boolean);
+   if(!did.length) warn.push(`“${raw}”: ${name} için hareketi anlayamadım (ileri, geri, sola, sağa, daral, genişle, pres)`);
+   else cur.desc.push(`${TEAMNAME[T]} ${name} → ${did.join(', ')}`);
+   cur.objs=clone(objs);
+   continue;
+  }
+  // ---- tek oyuncu
+  const T=baseTeam(subj.team); let [u,v]=uvOf(subj,T); const from=[subj.x,subj.y];
+  const ballUV=ball?uvOf(ball,T):[52,34];
+  let target=null, label='';
+  const isShot=/şut|vurur|gole|kaleye|bitirir|golü atar/.test(cl);
+  const isCross=/orta (yapar|açar|kesir|verir|gönderir)|ortalar|ortayı/.test(cl);
+  const isPass=!isShot&&!isCross&&/pas|topu (verir|atar|oynar|aktarır|gönderir|indirir|bırakır|açar)|aktarır|(?<![a-zçğıöşü])oynar|topu .*(?:e|a|ye|ya) (?:verir|atar)/.test(cl);
+  const isDrib=/sürer|top ?sür|topla (ilerler|gider|çıkar|koşar)|sürerek/.test(cl);
+  const isRecv=/topu (alır|kontrol)|topla buluşur|pası alır/.test(cl);
+  // hedef bölge
+  const Z=[
+   [/sol (çizgi|taç|kenar)/,()=>[u+6,4],'sol çizgi'],[/sağ (çizgi|taç|kenar)/,()=>[u+6,64],'sağ çizgi'],
+   [/sol yarım alan|sol iç/,()=>[u+5,22],'sol yarım alan'],[/sağ yarım alan|sağ iç/,()=>[u+5,46],'sağ yarım alan'],
+   [/sol kanat|(?<![${TL}])sola(?![${TL}])/,()=>[u+5,10],'sol kanat'],[/sağ kanat|(?<![${TL}])sağa(?![${TL}])/,()=>[u+5,58],'sağ kanat'],
+   [/penaltı noktası/,()=>[94,34],'penaltı noktası'],[/ön direk|yakın direk/,()=>[100,ballUV[1]<34?30:38],'ön direk'],
+   [/arka direk|uzak direk/,()=>[100,ballUV[1]<34?39:29],'arka direk'],[/kale önü|altı ?pas/,()=>[99,34],'kale önü'],
+   [/ceza (saha|alan)|kutuya/,()=>[90,Math.max(24,Math.min(44,v))],'ceza sahası'],
+   [/orta sahaya|orta çizgi/,()=>[52,v],'orta saha'],
+   [/(?<![${TL}])ortaya|merkez|orta (alan|bölge)/,()=>[u+4,34],'merkez'],
+   [/derin|savunma(nın)? arka|arkaya|derinlemesine|arkasına koş/,()=>[u+15,v],'savunma arkası'],
+   [/geri (çekil|gel|döner)|geriye|aşağı|kendi yarı/,()=>[u-8,v],'geri'],
+   [/ileri|öne|yukarı/,()=>[u+8,v],'ileri']
+  ].map(([re,f,l])=>[new RegExp(re.source.replace(/\$\{TL\}/g,TL)),f,l]);
+  const vac=/boşal(an|ttığı|tığı)|bıraktığı|boş kalan|onun yerine|yerine (geçer|gelir|girer)|boşluğa gelir/.test(cl);
+  const follow=/onunla|onu takip|ona eşlik|peşinden|markaj|onu tutar|takip eder|ile birlikte gelir/.test(cl);
+  const press=/baskı|pres|üzerine (çıkar|gider|gelir)/.test(cl);
+  if(vac){
+   const m=[...moved].reverse().find(x=>x.o!==subj&&baseTeam(x.o.team)===T)||[...moved].reverse().find(x=>x.o!==subj);
+   if(m){target=m.from.slice(); label='boşalan alan';} else warn.push(`“${raw}”: boşalan alanı bulamadım (önce birinin hareket etmesi gerekir)`);
+  } else if(follow||press){
+   const r=otherRef();
+   if(r){const [ru,rv]=uvOf(r,T); const same=baseTeam(r.team)===T;
+    target=xyOf(same?ru-4:ru-(press?1.5:2.2),same?rv+(rv<34?6:-6):rv,T); label=(press?'baskı: ':same?'destek: ':'takip: ')+pName(r);}
+   else warn.push(`“${raw}”: kimi takip edeceğini anlayamadım`);
+  } else {
+   for(const [re,f,l] of Z){ if(re.test(cl)){ const [uu,vv]=f(); target=xyOf(uu,vv,T); label=l; break; } }
+  }
+  // top işlemleri
+  if(!ball&&(isPass||isShot||isCross||isDrib)){ball={id:uid++,type:'ball',x:subj.x+.8,y:subj.y+.6}; objs.push(ball); cur.from.push(clone(ball));}
+  if(target){[subj.x,subj.y]=[R2(target[0]),R2(target[1])]; moved.push({o:subj,from}); cur.desc.push(`${pName(subj)} → ${label}`);}
+  if(isDrib){owner=subj; if(!target){[subj.x,subj.y]=xyOf(u+10,v,T); target=[subj.x,subj.y]; moved.push({o:subj,from}); cur.desc.push(`${pName(subj)} → top sürer`);} }
+  if(isRecv){owner=subj; ball.x=R2(subj.x+.8); ball.y=R2(subj.y+.6); cur.ballSet=true; cur.desc.push(`${pName(subj)} topu alır`);}
+  if(isShot){ const [gx,gy]=T==='A'?[104.7,32.6]:[.3,35.4]; ball.x=R2(gx); ball.y=R2(gy); owner=null; cur.ballSet=true; cur.desc.push(`${pName(subj)} → şut`);}
+  else if(isCross||isPass){
+   const r=objP[0]||(/(?<![a-zçğıöşü])ona(?![a-zçğıöşü])|onun/.test(cl)&&lastSubj&&lastSubj!==subj?lastSubj:null);
+   if(r){ball.x=R2(r.x+.8); ball.y=R2(r.y+.6); owner=r; cur.desc.push(`${isCross?'Orta':'Pas'}: ${pName(subj)} → ${pName(r)}`);}
+   else if(target&&!r){ball.x=R2(subj.x); ball.y=R2(subj.y); owner=null; cur.desc.push(`${isCross?'Orta':'Pas'}: ${pName(subj)} → ${label}`);}
+   else if(isCross){const [bx,by]=xyOf(97,34,T); ball.x=bx; ball.y=by; owner=null; cur.desc.push(`Orta: ${pName(subj)} → ceza sahası`);}
+   else warn.push(`“${raw}”: pasın kime gittiğini anlayamadım`);
+   cur.ballSet=true;
+  }
+  if(!target&&!isDrib&&!isRecv&&!isShot&&!isCross&&!isPass) warn.push(`“${raw}”: ${pName(subj)} için hareketi anlayamadım`);
+  lastSubj=subj;
+  // topa sahip oyuncu koştuysa top onunla gider
+  if(owner&&ball&&!cur.ballSet&&owner===subj&&target){ball.x=R2(subj.x+.8); ball.y=R2(subj.y+.6);}
+  cur.objs=clone(objs);
+ }
+ // adım kareleri
+ const out=[]; let prev=clone(objects);
+ steps.forEach(st=>{ if(!st.objs) return; out.push({objects:prev,drawings:[],cap:st.parts.join(' · '),desc:st.desc}); prev=st.objs; });
+ if(out.length) out.push({objects:prev,drawings:[],cap:'',desc:[]});
+ for(let i=0;i<out.length-1;i++) out[i].drawings=autoArrows(out[i].objects,out[i+1].objects);
+ return {frames:out,warn};
+}
+function speechPlugin(){return nativePlugin('SpeechRecognition');}
+function openVoiceTactic(){
+ if(playing) stopPlay();
+ const ex='Kırmızı 9 sol çizgiye gider, mavi 7 onunla gelir. Kırmızı 10 boşalan alana gelir. Kırmızı 6 kırmızı 9’a pas verir. Kırmızı defans bloğu yukarı çıkar.';
+ let rec=null, listening=false;
+ openModal(`<div class="shead"><h3>Sesle taktik</h3><button class="pb" id="vtC">Kapat</button></div>
+  <p class="muted" style="margin:0 0 8px">Konuşun ya da yazın. Oyuncuları renk ve numarayla söyleyin. Her cümle bir adım olur; “onunla”, “aynı anda” derseniz hareketler aynı adımda olur.</p>
+  <button class="bigb wa" id="vtMic">${icon('mic')}<span>Konuş</span></button>
+  <textarea id="vtT" rows="4" placeholder="${esc(ex)}"></textarea>
+  <div class="row" style="margin-top:6px"><button class="pb" id="vtEx">Örnek</button><button class="pb" id="vtClr">Temizle</button></div>
+  <div id="vtP" class="vtp"></div>
+  <button class="bigb vid" id="vtGo">${icon('play')}Animasyona çevir</button>
+  <p class="muted" style="margin-top:8px">Animasyon tahtadaki oyuncuların şu anki yerinden başlar. Önce dizilişi kurun.</p>`,m=>{
+  const ta=m.querySelector('#vtT'), pv=m.querySelector('#vtP'), mic=m.querySelector('#vtMic');
+  const preview=()=>{
+   const t=ta.value.trim(); if(!t){pv.innerHTML=''; return;}
+   const r=parseTactic(t,cur().objects);
+   pv.innerHTML=(r.frames.length?`<b>${r.frames.length-1} adım anlaşıldı</b><ol>${r.frames.slice(0,-1).map(f=>`<li>${f.desc.map(esc).join('<br>')||esc(f.cap)}</li>`).join('')}</ol>`:'')
+    +(r.warn.length?`<div class="vtw">${r.warn.map(w=>'⚠ '+esc(w)).join('<br>')}</div>`:'');
+  };
+  ta.oninput=()=>{clearTimeout(ta._t); ta._t=setTimeout(preview,250);};
+  const append=t=>{t=String(t||'').trim(); if(!t) return; ta.value=(ta.value.trim()?ta.value.trim().replace(/[.]?$/,'. '):'')+t.charAt(0).toLocaleUpperCase('tr-TR')+t.slice(1); preview();};
+  const setMic=on=>{listening=on; mic.querySelector('span').textContent=on?'Dinliyorum… bitirmek için dokunun':'Konuş'; mic.style.background=on?'#ff5a4f':'';};
+  mic.onclick=async()=>{
+   const SP=speechPlugin();
+   if(SP){
+    try{
+     try{await SP.requestPermissions();}catch(_){}
+     setMic(true);
+     const r=await SP.start({language:'tr-TR',maxResults:1,prompt:'Taktiği anlatın',partialResults:false,popup:true});
+     setMic(false); append(r&&r.matches&&r.matches[0]);
+    }catch(e){setMic(false); toast('Ses tanınamadı: '+(e&&e.message||e));}
+    return;
+   }
+   const W=window.SpeechRecognition||window.webkitSpeechRecognition;
+   if(!W){toast('Bu cihazda sesle yazma yok. Taktiği yazarak girebilirsiniz.');return;}
+   if(listening&&rec){rec.stop(); return;}
+   rec=new W(); rec.lang='tr-TR'; rec.continuous=true; rec.interimResults=false;
+   rec.onresult=e=>{for(let i=e.resultIndex;i<e.results.length;i++) if(e.results[i].isFinal) append(e.results[i][0].transcript);};
+   rec.onend=()=>setMic(false); rec.onerror=e=>{setMic(false); if(e.error!=='aborted') toast('Ses tanıma hatası: '+e.error);};
+   try{rec.start(); setMic(true);}catch(e){toast('Mikrofon açılamadı');}
+  };
+  m.querySelector('#vtEx').onclick=()=>{ta.value=ex; preview();};
+  m.querySelector('#vtClr').onclick=()=>{ta.value=''; preview();};
+  m.querySelector('#vtC').onclick=()=>{try{rec&&rec.stop();}catch(_){} closeModal();};
+  m.querySelector('#vtGo').onclick=()=>{
+   const r=parseTactic(ta.value.trim(),cur().objects);
+   if(r.frames.length<2){toast('Anlaşılan bir hareket yok. Örneğe bakın.');return;}
+   try{rec&&rec.stop();}catch(_){}
+   beginChange();
+   frames=frames.slice(0,fi).concat(r.frames.map(f=>({objects:f.objects,drawings:f.drawings,cap:f.cap})));
+   fixUid(); closeModal(); afterChange();
+   toast(`Animasyon hazır: ${r.frames.length-1} adım. Oyunculara göndermek için “Video”ya basın.`);
+   setTimeout(()=>play(false),400);
+  };
  });
 }
 
@@ -2191,6 +2417,7 @@ $('#bBackLib').onclick=()=>setMode('lib');
 $('#bEditDrill').onclick=editDrillOnBoard;
 $('#bShareDrill').onclick=()=>openShareDrill(curDrill);
 $('#bVideo').onclick=openBoardVideo;
+$('#bVoiceT').onclick=openVoiceTactic;
 $('#sbarB').onclick=openSession;
 $('#dVoice').onclick=()=>{unlockSpeech(); S.voice=!S.voice; persist(); if(!S.voice) TTS.stop(); else if(!TTS.ok()) toast('Bu cihazda sesli okuma desteklenmiyor'); else if(!playing) TTS.speak(stepText(fi)||curDrill.ad); updateUI();};
 $('#dPlay').onclick=togglePlay;
