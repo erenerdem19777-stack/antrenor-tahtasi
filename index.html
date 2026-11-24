@@ -300,6 +300,7 @@ body.m-home #capOv,body.m-lib #capOv{display:none!important}
   <button class="btn hl dr" id="bShareDrill" data-i="share"><span class="hide-p">Paylaş</span></button>
   <button class="btn hl fill dr" id="bEditDrill" data-i="pen"><span class="hide-p">Tahtada düzenle</span></button>
   <button class="btn bo" id="b3d" title="3B / 2B görünüm"><b id="b3dT">3B</b></button>
+  <button class="btn bo" id="bCam" title="Kamera açısı">🎥 <span id="bCamT" class="hide-p">Orta</span></button>
   <button class="btn" id="bFull" title="Tam ekran" data-i="full"></button>
  </header>
  <div id="main">
@@ -5725,7 +5726,7 @@ function buildDrill(d){
 }
 
 /* =================== STATE =================== */
-let S={colA:'#e53935',colB:'#1e88e5',colGKA:'#fdd835',colGKB:'#43a047',size:1,lw:3,names:true,field:'grass',view:'full',vrect:null,orient:'auto',ghost:true,speed:1,fmt:'11',fA:'11|4-4-2',fB:'11|4-3-3',voice:true,d3:true,vis:'real',vvoice:'',ttsName:'',ttsPitch:1.05,session:[],team:'',where:''};
+let S={colA:'#e53935',colB:'#1e88e5',colGKA:'#fdd835',colGKB:'#43a047',size:1,lw:3,names:true,field:'grass',view:'full',vrect:null,orient:'auto',ghost:true,speed:1,fmt:'11',fA:'11|4-4-2',fB:'11|4-3-3',voice:true,d3:true,vis:'real',camA:'orta',follow:true,vvoice:'',ttsName:'',ttsPitch:1.05,session:[],team:'',where:''};
 let frames=[{objects:[],drawings:[]}], fi=0, uid=1;
 let tool='move', color='#ffffff', placing=null, playing=false, playTok=0;
 let undoStack=[], redoStack=[];
@@ -5754,7 +5755,7 @@ function computeView(){
   const zb=document.getElementById('zbtn'); if(zb){zb.classList.toggle('show',mode==='board'||mode==='drill'); const r=document.getElementById('zRst'); if(r) r.style.display=ZM.z>1.01?'':'none';}
  }
  let vertical=S.orient==='v'||(S.orient==='auto'&&CH>CW*1.05);
- if(mode==='drill'&&S.orient==='auto') vertical=Math.min(CW/wh,CH/ww)>Math.min(CW/ww,CH/wh)*1.08;
+ if(mode==='drill'&&S.orient==='auto') vertical=curDrill&&curDrill._follow?false:Math.min(CW/wh,CH/ww)>Math.min(CW/ww,CH/wh)*1.08;
  const sw=vertical?wh:ww, sh=vertical?ww:wh;
  // altyazı sahanın üstüne binmesin: ana tahtada alt kısımda yer ayır
  const res=(ctx===MAINCTX&&(mode==='drill'||frames.some(f=>f.cap)))?(CW<700?40:50):0;
@@ -5976,7 +5977,7 @@ let drawingNow=null, selObj=null;
 const P3={th:52*Math.PI/180}; let PJM=null; const gCache=new WeakMap();
 const is3D=()=>S.vis==='3d'||(S.vis==='real'&&!realOK());
 function proj3(){
- const tall=CH>CW*1.15, th=tall?40*Math.PI/180:P3.th;
+ const tall=CH>CW*1.15, th=Math.max(4,CAMS[camKey()].t-(tall?12:0))*Math.PI/180;
  const sn=Math.sin(th), cs=Math.cos(th), D=Math.max(CW,CH)*(tall?1.9:1.3), f=D, cx=CW/2, cy=CH/2;
  const sw=(V.vertical?V.wh:V.ww)*V.s, sh=(V.vertical?V.ww:V.wh)*V.s;
  const raw=(px,py)=>{const u=px-cx,v=py-cy,z=D-v*sn; return [f*u/z,f*v*cs/z];};
@@ -6128,7 +6129,7 @@ function hitObject3D(qx,qy){
 }
 /* ---------- GERÇEKÇİ GÖRÜNÜM: WebGL stadyum, çim, tribün, hareketli futbolcular ---------- */
 const RL={ok:null}; let PJR=null;
-const baseWW=()=>(ctx===MAINCTX&&ZM.base&&ZM.z>1.001)?ZM.base[2]:V.ww;
+const baseWW=()=>VIEWREF||((ctx===MAINCTX&&ZM.base&&ZM.z>1.001)?ZM.base[2]:V.ww);
 const realSz=()=>Math.max(1.2,Math.min(2.7,baseWW()/105*2.7))*S.size/((ctx===MAINCTX&&ZM.z>1.001)?Math.pow(ZM.z,.45):1);
 const isReal=()=>S.vis==='real'&&realOK();
 function realOK(){
@@ -6281,7 +6282,7 @@ function fitCamera(cam,W,H){
  const T=THREE, vert=V.vertical, res=V.res||0;
  const x0=V.wx0,x1=V.wx0+V.ww,y0=V.wy0,y1=V.wy0+V.wh, cx=(x0+x1)/2, cy=(y0+y1)/2;
  const small=baseWW()<60;
- const E=(vert?44:(small?46:38))*Math.PI/180;
+ const E=CAMS[camKey()].e*Math.PI/180;
  if(RL.stands){RL.stands.S.visible=vert; RL.stands.W.visible=!vert;}
  cam.aspect=W/H; cam.fov=small?44:38; cam.updateProjectionMatrix();
  const dir=vert?new T.Vector3(-Math.cos(E),Math.sin(E),0):new T.Vector3(0,Math.sin(E),Math.cos(E));
@@ -6289,8 +6290,8 @@ function fitCamera(cam,W,H){
  const corners=[[x0,0,y0],[x1,0,y0],[x0,0,y1],[x1,0,y1],[x0,2.3,y0],[x1,2.3,y0],[cx,2.6,vert?cy:y0]];
  const yb=1-2*(res/H)-0.02;
  let lo=5,hi=400;
- const fits=L=>{cam.position.copy(tgt).addScaledVector(dir,L); cam.up.set(0,1,0); cam.lookAt(tgt); cam.updateMatrixWorld(); cam.updateProjectionMatrix();
-  for(const c of corners){const v=new T.Vector3(c[0],c[1],c[2]).project(cam); if(v.x<-.985||v.x>.985||v.y>.95||v.y<-yb) return false;} return true;};
+ const fits=L=>{cam.position.copy(tgt).addScaledVector(dir,L); if(camKey()==='tepe'){ if(vert) cam.up.set(1,0,0); else cam.up.set(0,0,-1);} else cam.up.set(0,1,0); cam.lookAt(tgt); cam.updateMatrixWorld(); cam.updateProjectionMatrix();
+  for(const c of corners){const v=new T.Vector3(c[0],c[1],c[2]).project(cam); const lim=(camKey()==='alcak'&&v.y<0)?1.22:.985; if(v.x<-lim||v.x>lim||v.y>.95||v.y<-yb) return false;} return true;};
  for(let i=0;i<26;i++){const m=(lo+hi)/2; if(fits(m)) hi=m; else lo=m;}
  cam.clearViewOffset(); fits(hi);
  // dikeyde ortala: sahayı kullanılabilir alanın ortasına kaydır, sonra yeniden yakınlaştır
@@ -6965,17 +6966,63 @@ async function synthClip(ac,text){
  const bin=atob(r.data), buf=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) buf[i]=bin.charCodeAt(i);
  return await new Promise((res,rej)=>ac.decodeAudioData(buf.buffer,res,rej));
 }
+
+/* ---------- Kamera açısı ve aksiyonu izleyen kamera ---------- */
+const CAMS={alcak:{ad:'Alçak',e:16,t:64,ic:'⬇'},orta:{ad:'Orta',e:34,t:52,ic:'↘'},yuksek:{ad:'Yüksek',e:54,t:38,ic:'⬆'},tepe:{ad:'Tepe',e:88,t:8,ic:'⤓'}};
+const camKey=()=>CAMS[S.camA]?S.camA:'orta';
+let VIEWREF=null; // takip kamerasında oyuncu boyu sabit kalsın diye asıl görüş genişliği
+function camPickerHTML(id='camsel'){
+ return `<label>Kamera açısı</label><div class="seg" id="${id}">${Object.entries(CAMS).map(([k,c])=>`<button data-c="${k}" class="${camKey()===k?'on':''}">${c.ic} ${c.ad}</button>`).join('')}</div>
+  <label class="chk" style="display:flex;align-items:center;gap:8px;margin-top:8px"><input type="checkbox" id="${id}F" ${S.follow?'checked':''}> 🎥 Aksiyonu izle: kamera topu takip etsin, yaklaşıp uzaklaşsın</label>`;
+}
+function bindCamPicker(root,id='camsel',after){
+ root.querySelectorAll('#'+id+' button').forEach(b=>b.onclick=()=>{S.camA=b.dataset.c; persist(); root.querySelectorAll('#'+id+' button').forEach(x=>x.classList.toggle('on',x===b)); updCam(); computeView(); render(); after&&after();});
+ const f=root.querySelector('#'+id+'F'); if(f) f.onchange=()=>{S.follow=f.checked; persist(); after&&after();};
+}
+function updCam(){const t=$('#bCamT'); if(t) t.textContent=CAMS[camKey()].ad;}
+function openCamMenu(){
+ openModal(`<div class="shead"><h3>🎥 Kamera</h3><button class="pb" id="cmX">Kapat</button></div>
+  ${camPickerHTML('camM')}
+  <p class="muted" style="margin-top:10px">Alçak: oyuncu hizasından, televizyon yayını gibi. Orta: tribünden. Yüksek: üst tribünden. Tepe: kuş bakışı, taktik çizimleri için en net görünüm. Aksiyonu izle açıkken tam ekran video ve WhatsApp videosu topu takip eder: top nereye giderse kamera oraya yaklaşır.</p>`,m=>{
+  bindCamPicker(m,'camM'); m.querySelector('#cmX').onclick=closeModal;});
+}
+/* her adım için odak dikdörtgeni: top + o adımda hareket eden oyuncular */
+function followKeys(o){
+ if(o._fk) return o._fk;
+ const [bx,by,bw,bh]=o.view, ar=bw/bh, minW=Math.min(bw,Math.max(42,bw*.42));
+ const rectOf=(i)=>{
+  const a=o.fr[Math.min(i,o.fr.length-1)].objects, b=o.fr[Math.min(i+1,o.fr.length-1)].objects, mb=new Map(b.map(x=>[x.id,x]));
+  const pts=[];
+  a.forEach(x=>{const y=mb.get(x.id); if(x.type==='ball'){pts.push([x.x,x.y]); if(y) pts.push([y.x,y.y]);} else if(y&&Math.hypot(x.x-y.x,x.y-y.y)>.8){pts.push([x.x,x.y],[y.x,y.y]);}});
+  if(!pts.length) return [bx,by,bw,bh];
+  let x0=Math.min(...pts.map(p=>p[0]))-8, x1=Math.max(...pts.map(p=>p[0]))+8, y0=Math.min(...pts.map(p=>p[1]))-7, y1=Math.max(...pts.map(p=>p[1]))+7;
+  let w=Math.max(minW,x1-x0), h=Math.max(w/ar,y1-y0); w=Math.max(w,h*ar); w=Math.min(w,bw); h=w/ar;
+  const cx=Math.max(bx+w/2,Math.min(bx+bw-w/2,(x0+x1)/2)), cy=Math.max(by+h/2,Math.min(by+bh-h/2,(y0+y1)/2));
+  return [cx-w/2,cy-h/2,w,h];
+ };
+ o._fk=o.fr.map((_,i)=>rectOf(i)); return o._fk;
+}
+function followView(o,st){
+ const K=followKeys(o), n=o.fr.length-1;
+ if(st.k==='intro') return o.view; // açılışta tüm saha
+ if(st.k==='end') return K[Math.max(0,n-1)];
+ const i=st.i, r=ease(Math.max(0,Math.min(1,st.r))), A=K[Math.max(0,i-1)]||K[i], B=K[i];
+ const t=Math.min(1,Math.max(0,(st.r+.35)/.6)); // adım başında yeni odağa kay
+ const lerp=(p,q,u)=>p+(q-p)*u, u=ease(t);
+ return [0,1,2,3].map(j=>lerp(A[j],B[j],u));
+}
 /* ---------- Video karesi: üstte başlık şeridi, ortada saha, altta altyazı şeridi (saha kapanmaz) ---------- */
 const VTOP=74, VBOT=122;
 function vidFrame(oc2,pc,W,H,o,st,prog){
  const PH=H-VTOP-VBOT, n=o.fr.length-1;
  const G={ctx,CW,CH,dpr,V,frames,fi,curDrill,mode,playing};
- ctx=pc.getContext('2d');CW=W;CH=PH;dpr=1;frames=o.fr;mode='drill';curDrill={view:o.view};playing=true;computeView();
+ const fv=o.follow?followView(o,st):o.view; VIEWREF=o.follow?o.view[2]:null;
+ ctx=pc.getContext('2d');CW=W;CH=PH;dpr=1;frames=o.fr;mode='drill';curDrill={view:fv,_follow:true};playing=true;computeView();
  try{
   ctx.setTransform(1,0,0,1,0,0);
   if(st.k==='step'){fi=st.i; if(st.r<=0) render(); else render(interp(o.fr[st.i],o.fr[st.i+1],ease(Math.min(1,st.r))),o.fr[st.i].drawings);}
   else {fi=st.k==='end'?n:0; render();}
- } finally {({ctx,CW,CH,dpr,V,frames,fi,curDrill,mode,playing}=G);}
+ } finally {({ctx,CW,CH,dpr,V,frames,fi,curDrill,mode,playing}=G); VIEWREF=null;}
  const c=oc2; c.setTransform(1,0,0,1,0,0);
  c.fillStyle='#07130d'; c.fillRect(0,0,W,H); c.drawImage(pc,0,VTOP);
  if(st.k==='intro'){introCard(c,W,H,o); return;}
@@ -7256,7 +7303,8 @@ function voicePicker(){
   <button data-v="none" class="${def==='none'?'on':''}">Sessiz (yazılı)</button>
   <button data-v="auto" class="${def==='auto'?'on':''}" ${auto?'':'disabled style="opacity:.4"'}>Otomatik ses</button>
   <button data-v="mic" class="${def==='mic'?'on':''}">🎙 Kendi sesim</button></div>
-  <p class="muted" id="vnote" style="margin:6px 0 0"></p><button class="pb sm" type="button" id="vsB" style="margin-top:6px">🎙 Anlatıcı sesini seç (erkek / kadın)</button>`;
+  <p class="muted" id="vnote" style="margin:6px 0 0"></p><button class="pb sm" type="button" id="vsB" style="margin-top:6px">🎙 Anlatıcı sesini seç (erkek / kadın)</button>
+  <div style="margin-top:10px">${camPickerHTML('camV')}</div>`;
 }
 function bindVoicePicker(m){
  const notes={none:'Adımlar videoda yazı olarak görünür.',auto:'Telefonun Türkçe sesi her adımı okur ve ses videoya kaydedilir.',mic:'Gönder’e basınca 3-2-1 geri sayım başlar, ardından “● KAYIT” görünür. Ekranda ne anlatacağınız ve kalan süre yazar. Kayıt bitince dinleyip gönderirsiniz.'};
@@ -7264,6 +7312,7 @@ function bindVoicePicker(m){
  m.querySelectorAll('#vsel button').forEach(b=>b.onclick=()=>{if(!b.disabled) set(b.dataset.v);});
  set(m.querySelector('#vsel button.on').dataset.v);
  const vb=m.querySelector('#vsB'); if(vb) vb.onclick=()=>openVoiceSettings();
+ bindCamPicker(m,'camV');
 }
 function videoUI(m,jobs,text,autoShare){
  const box=m.querySelector('#vbox'), btn=m.querySelector('#mkV'), voice=(m.querySelector('#vsel button.on')||{dataset:{v:'none'}}).dataset.v;
@@ -7288,6 +7337,7 @@ function videoUI(m,jobs,text,autoShare){
       const left=total-t; const B=$b('rcB'); if(left<4000&&left>0){B.textContent='● '+Math.ceil(left/1000)+' sn kaldı';} },
      end:()=>{const B=$b('rcB'); B.textContent='✓ KAYIT BİTTİ'; B.classList.remove('live'); B.classList.add('done'); $b('rcNow').textContent='Kayıt tamamlandı. Video hazırlanıyor…'; $b('rcNext').textContent=''; $b('rcL').style.width='0'; if(navigator.vibrate) navigator.vibrate([60,60,60]);}
     }:null;
+    jobs[k].opts.follow=!!S.follow; delete jobs[k].opts._fk;
     const f=await makeVideo(jobs[k].opts,p=>{const e=document.getElementById('pbar'); if(e) e.style.width=Math.round(p*100)+'%';},
      {voice,preview:box.querySelector('#pprev'),rec,status:t=>{const e=document.getElementById('pst'); if(e) e.textContent=t;}});
     files.push(f);
@@ -8531,9 +8581,10 @@ async function openVoiceSettings(){
 }
 function openCinema(o){
  if(playing) stopPlay(); TTS.stop(); unlockSpeech();
+ o.follow=!!S.follow; delete o._fk;
  const W=1280,H=720, n=o.fr.length-1, sc=narrationScript(o.title,o.desc,frameCaps(o.fr),o.kind||'tactic');
  const ov=document.createElement('div'); ov.id='cine';
- ov.innerHTML=`<canvas width="${W}" height="${H}"></canvas><div class="cbar"><button class="pb" data-c="re">⟲ Baştan</button><button class="pb" data-c="mu"></button><button class="pb" data-c="vs">🎙 Ses seç</button>${o.onShare?'<button class="pb wa2" data-c="sh">Oyunculara gönder</button>':''}<button class="pb" data-c="ed">Tahtada düzenle</button><button class="pb pri" data-c="x">Kapat</button></div>`;
+ ov.innerHTML=`<canvas width="${W}" height="${H}"></canvas><div class="cbar"><button class="pb" data-c="re">⟲ Baştan</button><button class="pb" data-c="mu"></button><button class="pb" data-c="vs">🎙 Ses seç</button><button class="pb" data-c="cam">🎥 Kamera: <span id="cmT">${CAMS[camKey()].ad}${S.follow?' · takip':''}</span></button>${o.onShare?'<button class="pb wa2" data-c="sh">Oyunculara gönder</button>':''}<button class="pb" data-c="ed">Tahtada düzenle</button><button class="pb pri" data-c="x">Kapat</button></div>`;
  document.body.appendChild(ov);
  const cv=ov.querySelector('canvas'), c2=cv.getContext('2d');
  let st={k:'intro',t0:performance.now()}, tok=0, alive=true, muted=!S.voice;
@@ -8563,6 +8614,9 @@ function openCinema(o){
  mb.onclick=()=>{muted=!muted; if(muted) TTS.stop(); else {S.voice=true; persist();} mlab();};
  ov.querySelector('[data-c=x]').onclick=close;
  ov.querySelector('[data-c=vs]').onclick=()=>{tok++; TTS.stop(); openVoiceSettings();};
+ ov.querySelector('[data-c=cam]').onclick=()=>{const ks=Object.keys(CAMS), seq=[]; ks.forEach(k=>{seq.push([k,false]); seq.push([k,true]);});
+  const i=seq.findIndex(([k,f])=>k===camKey()&&f===!!S.follow); const [k,f]=seq[(i+1)%seq.length]; S.camA=k; S.follow=f; persist(); o.follow=f; delete o._fk; updCam();
+  ov.querySelector('#cmT').textContent=CAMS[k].ad+(f?' · takip':''); run();};
  ov.querySelector('[data-c=ed]').onclick=()=>{close(); fi=0; updateUI(); render();};
  const sh=ov.querySelector('[data-c=sh]'); if(sh) sh.onclick=()=>{close(); o.onShare();};
  cv.onclick=()=>run();
@@ -8596,6 +8650,7 @@ const VISL={'2d':'2B','3d':'3B',real:'Gerçek'};
 const upd3d=()=>{const t=$('#b3dT'); if(t) t.textContent=VISL[S.vis]||'3B'; const b=$('#b3d'); if(b) b.classList.toggle('on',S.vis!=='2d');};
 const cycleVis=()=>{const o=realOK()?['2d','3d','real']:['2d','3d']; S.vis=o[(o.indexOf(S.vis)+1)%o.length]; persist(); upd3d(); computeView(); render(); toast&&toast('Görünüm: '+({'2d':'2B (düz)','3d':'3B','real':'Gerçekçi stadyum'}[S.vis]));};
 $('#b3d').onclick=cycleVis; upd3d();
+$('#bCam').onclick=openCamMenu; updCam();
 $('#bFull').onclick=async()=>{try{if(!document.fullscreenElement){await document.documentElement.requestFullscreen(); try{await screen.orientation.lock('landscape');}catch(_){}} else await document.exitFullscreen();}catch(_){toast('Tam ekran bu ortamda desteklenmiyor');}};
 $('#bPlay').onclick=()=>play(false);
 $('#bSpeed').onclick=$('#dSpeed').onclick=()=>{S.speed={1:2,2:.5,.5:1}[S.speed]||1; persist(); updateUI();};
