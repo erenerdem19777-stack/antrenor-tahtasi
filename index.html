@@ -51,6 +51,9 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;displa
 #capOv{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);background:rgba(5,12,8,.86);color:#fff;padding:9px 16px;border-radius:14px;font:700 15px/1.35 system-ui;pointer-events:none;max-width:92%;text-align:center;border:1px solid rgba(255,255,255,.12)}
 #capOv b{color:var(--acc);margin-right:6px}
 #capOv:empty{display:none}
+#cine{position:fixed;inset:0;z-index:9999;background:#050c08;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:10px}
+#cine canvas{position:static;width:min(100%,calc((100vh - 90px)*16/9));height:auto;aspect-ratio:16/9;border-radius:12px;background:#000;box-shadow:0 10px 40px rgba(0,0,0,.6)}
+#cine .cbar{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
 .chip{min-width:40px;height:34px;border-radius:9px;background:var(--panel2);border:1px solid var(--line);color:var(--tx);font:700 14px system-ui;flex:none;cursor:pointer;padding:0 10px}
 .chip.on{background:var(--acc);color:var(--accd);border-color:var(--acc)}
 #frameChips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;flex:1;min-width:60px}
@@ -1605,14 +1608,14 @@ const TTS={
  ok(){return !!(this.cap()||('speechSynthesis' in window));},
  speak(text){
   const c=this.cap();
-  if(c) return c.speak({text,lang:'tr-TR',rate:1.0,pitch:1.0,volume:1.0,category:'playback'}).catch(e=>{if(!this.warned){this.warned=true; voiceHelp(e);}});
+  if(c) return c.speak({text,lang:'tr-TR',rate:1.05,pitch:1.05,volume:1.0,category:'playback'}).catch(e=>{if(!this.warned){this.warned=true; voiceHelp(e);}});
   if(!('speechSynthesis' in window)) return Promise.resolve();
   return new Promise(res=>{
    let done=false; const fin=()=>{if(!done){done=true;res();}};
    try{
     speechSynthesis.cancel();
-    const u=new SpeechSynthesisUtterance(text); u.lang='tr-TR'; u.rate=1;
-    const v=speechSynthesis.getVoices().find(v=>/^tr/i.test(v.lang)); if(v) u.voice=v;
+    const u=new SpeechSynthesisUtterance(text); u.lang='tr-TR'; u.rate=1.05; u.pitch=1.05;
+    const tv=speechSynthesis.getVoices().filter(v=>/^tr/i.test(v.lang)); const sc=v=>(/natural|neural|enhanced|premium|online/i.test(v.name)?4:0)+(/google|yelda|emel|ahmet/i.test(v.name)?2:0)+(v.localService===false?1:0); tv.sort((a,b)=>sc(b)-sc(a)); if(tv[0]) u.voice=tv[0];
     u.onend=fin; u.onerror=fin; speechSynthesis.speak(u);
     setTimeout(fin,Math.min(20000,1500+text.length*90));
    }catch(e){fin();}
@@ -1630,7 +1633,40 @@ function voiceHelp(e){
 }
 function unlockSpeech(){try{if(!TTS.cap()&&window.speechSynthesis&&!unlockSpeech.done){const u=new SpeechSynthesisUtterance(' ');u.volume=0;speechSynthesis.speak(u);unlockSpeech.done=true;}}catch(e){}}
 const IOS=/iP(hone|ad|od)/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
-function stepText(i){const n=frames.length-1; if(i>=n) return ''; return `Adım ${i+1}. ${frames[i].cap}`;}
+/* ---------- Doğal, motive eden anlatım ---------- */
+const NUMW=['sıfır','bir','iki','üç','dört','beş','altı','yedi','sekiz','dokuz','on','on bir'];
+function sayable(t){
+ let s=String(t||'');
+ s=s.replace(/1\s*['’]\s*e\s*1/g,'bire bir').replace(/(\d)\s*\+\s*(\d)/g,(m,a,b)=>NUMW[a]+' artı '+NUMW[b])
+  .replace(/(\d+),\d+\s*m\b/g,'$1 metre').replace(/\b(\d)-(\d)-(\d)(?:-(\d))?\b/g,(...a)=>a.slice(1,5).filter(Boolean).map(d=>NUMW[d]).join(' '))
+  .replace(/\b(\d)\s*[-–]\s*(\d)\b/g,(m,a,b)=>NUMW[a]+' '+NUMW[b])
+  .replace(/(\d{1,2})\s*[’']\s*([a-zçğıöşü]+)/g,(m,n,suf)=>(+n<=11?NUMW[+n]:n)+suf)
+  .replace(/\d{1,2}(?!\d)/g,(m,off,str)=>{ if(off>0&&/[\d.,]/.test(str[off-1])) return m; const n=+m; if(n>11) return m; const af=str.slice(off+m.length);
+   if(/^\s*(numara|metre|m\b|saniye|dakika|dk|kişi|oyuncu|pas|hat|adım|kat)/.test(af)) return NUMW[n]; return NUMW[n]+' numara';})
+  .replace(/\s*[·•→|]\s*/g,', ').replace(/\s*:\s*/g,', ').replace(/\s*\+\s*/g,' ve ').replace(/[()]/g,', ').replace(/[–—]/g,' ')
+  .replace(/\bGOL!?/gi,'Ve gol!').replace(/\s+,/g,',').replace(/(,\s*)+,/g,',').replace(/,\s*$/,'').replace(/,\s*([.!?])/g,'$1').replace(/\s+/g,' ').trim();
+ return s;
+}
+const _hash=t=>{let h=0; for(const c of String(t)) h=(h*31+c.charCodeAt(0))|0; return Math.abs(h);};
+function narrationScript(title,desc,caps,kind){
+ const h=_hash(title);
+ const INTRO=kind==='drill'
+  ?['Hadi gençler, toplanın! Şimdi','Haydi başlıyoruz! Bugünkü çalışmamız','Dikkat, herkes beni dinlesin! Sıradaki çalışma']
+  :['Beyler, toplanın! Bugünkü planımız','Hadi beyler, dikkat! Maçı bu şekilde kazanacağız','Arkadaşlar, beni iyi dinleyin! Planımız'];
+ const LINK=['Sonra,','Hemen ardından,','Şimdi,','Arkasından,','Dikkat,'];
+ const OUTRO=kind==='drill'
+  ?['Harika! Yüksek tempo, bol iletişim. Hadi göreyim sizi!','İşte bu! Konsantrasyon ve enerji, sahada da böyle yapıyoruz!','Süper! Her tekrarda daha iyi olacağız. Hadi!']
+  :['İşte bu kadar! Herkes görevini biliyor. Sahaya çıkıyoruz ve birlikte yapıyoruz. Hadi beyler!','Bu planı herkes uygularsa kazanırız. Cesaret, iletişim, mücadele. Size inanıyorum!','Harika! Birlikte savunuyoruz, birlikte hücum ediyoruz. Hadi, bu maçı alıyoruz!'];
+ const n=caps.length, steps=caps.map((c,i)=>{
+  const s=sayable(c); if(!s) return '';
+  if(/^ve gol/i.test(s)) return 'Ve gol! İşte bu!';
+  const lead=i===0?'Önce,':(i===n-1&&n>2?'Ve son olarak,':LINK[(h+i)%LINK.length]);
+  return lead+' '+s.charAt(0).toLocaleLowerCase('tr-TR')+s.slice(1)+(/[.!?]$/.test(s)?'':'.');
+ });
+ return {intro:`${INTRO[h%INTRO.length]}: ${sayable(String(title).replace(/\s*\([^)]*\)/g,''))}. ${desc?sayable(desc):''}`.trim(), steps, outro:OUTRO[h%OUTRO.length]};
+}
+function frameCaps(fr){return fr.slice(0,-1).map(f=>f.cap||'');}
+function stepText(i){const n=frames.length-1; if(i>=n||!frames[i].cap) return ''; return narrationScript(curDrill?curDrill.ad:'',null,frameCaps(frames),mode==='drill'?'drill':'tactic').steps[i];}
 function interp(A,B,k){
  const map=new Map(A.objects.map(o=>[o.id,o])), bIds=new Set(B.objects.map(o=>o.id));
  const objs=B.objects.map(o=>{const a=map.get(o.id); return a?{...o,x:a.x+(o.x-a.x)*k,y:a.y+(o.y-a.y)*k}:{...o,_a:k};});
@@ -1646,12 +1682,13 @@ function play(loop){
  let i=fi>=frames.length-1?0:fi; fi=i; let t0=performance.now(), phase='hold', loopN=0, ready=true;
  const narr=idx=>{
   if(!S.voice||loopN>0||!(mode==='drill'?curDrill:frames.some(f=>f.cap))){ready=true;return;}
-  let txt=stepText(idx); if(idx===0&&mode==='drill') txt=`${curDrill.ad}. ${curDrill.amac} ${txt}`;
+  const sc=narrationScript(mode==='drill'?curDrill.ad:'',mode==='drill'?curDrill.amac:null,frameCaps(frames),mode==='drill'?'drill':'tactic');
+  let txt=idx>=frames.length-1?sc.outro:sc.steps[idx]; if(idx===0&&mode==='drill') txt=`${sc.intro} ${txt}`;
   if(!txt){ready=true;return;}
   ready=false; TTS.speak(txt).then(()=>{if(tok===playTok) ready=true;});
  };
  narr(i);
- const dur=()=>1400/S.speed, hold=()=>((mode==='drill'?900:350)*(i>=frames.length-1?1.8:1))/S.speed;
+ const dur=()=>1500/S.speed, hold=()=>((mode==='drill'?250:150)*(i>=frames.length-1?6:1))/S.speed;
  updateUI(); render();
  const step=now=>{
   if(!playing||tok!==playTok) return;
@@ -1703,7 +1740,7 @@ function renderPanel(){
  const d=curDrill; if(!d) return;
  const age=AGES.find(a=>a.k===d.age);
  const sv=(t,c,dash,wavy)=>`<svg viewBox="0 0 46 14"><path d="${wavy?'M2 7q3-5 6 0t6 0 6 0 6 0 6 0':'M2 7h32'}" stroke="${c}" stroke-width="2.5" fill="none" ${dash?'stroke-dasharray="5 4"':''}/><path d="M44 7l-9-5v10z" fill="${c}"/></svg>`;
- $('#dpanel').innerHTML=`<h2>${esc(d.ad)}</h2>
+ $('#dpanel').innerHTML=`<h2>${esc(d.ad)}</h2><button class="pb pri" id="dCine" style="width:100%;margin:6px 0 4px">▶ Videoyu izle (sesli, tam ekran)</button>
  <div class="tags"><span class="tag age">${esc(age.ad)}</span><span class="tag">${esc(d.tur)}</span><span class="tag">⏱ ${esc(d.sure)}</span><span class="tag">${esc(d.alan)}</span><span class="tag">${esc(d.oyuncu)}</span></div>
  <h4>AMAÇ</h4><p>${esc(d.amac)}</p>
  <h4>KURULUM</h4><p>${esc(d.kurulum)}</p>
@@ -1712,6 +1749,7 @@ function renderPanel(){
  <h4>VARYASYON / ZORLAŞTIRMA</h4><p>${esc(d.varyasyon)}</p>
  <h4>ÇİZİM ANAHTARI</h4><div class="legend">${sv('', '#fff')}<span>Pas</span>${sv('','#ffd400',1)}<span>Topsuz koşu</span>${sv('','#ffb020',0,1)}<span>Top sürme</span>${sv('','#ff3b30')}<span>Şut / gol</span></div>
  <p class="muted" style="margin-top:12px">Sahaya dokunarak animasyonu durdurup başlatabilirsiniz.</p>`;
+ $('#dCine').onclick=()=>openCinema(drillVideoOpts(d));
  $$('#dsteps li').forEach(li=>li.onclick=()=>{if(playing)stopPlay(); fi=+li.dataset.i; updateUI(); render(); if(S.voice){const t=stepText(fi); t&&TTS.speak(t);}});
 }
 function renderLib(){
@@ -1738,7 +1776,7 @@ function updateUI(){
  r.setProperty('--colA',S.colA); r.setProperty('--colB',S.colB); r.setProperty('--colGKA',S.colGKA); r.setProperty('--colGKB',S.colGKB);
  if(mode==='drill'){
   const n=frames.length-1, c=frames[fi]?.cap||'';
-  $('#capOv').innerHTML=c?`<b>${fi<n?(fi+1)+'/'+n:'✓'}</b>${esc(c)}`:'';
+  $('#capOv').innerHTML=c?esc(c):'';
   $('#dstep').textContent=`Adım ${Math.min(fi+1,n)} / ${n}`;
   $('#dPlay').querySelector('svg').innerHTML=playing?ICONS.pause:ICONS.play;
   $('#dSpeed').textContent=S.speed+'x';
@@ -1747,7 +1785,7 @@ function updateUI(){
   return;
  }
  if(mode!=='board') return;
- {const n=frames.length-1, c=frames[fi]&&frames[fi].cap; $('#capOv').innerHTML=c?`<b>${fi+1}/${n}</b>${esc(c)}`:'';}
+ {const n=frames.length-1, c=frames[fi]&&frames[fi].cap; $('#capOv').innerHTML=c?esc(c):'';}
  $$('.tool').forEach(b=>b.classList.toggle('on',b.dataset.tool===tool&&!placing));
  $$('[data-add]').forEach(b=>b.classList.toggle('on',b.dataset.add===placing));
  $$('#colors .sw').forEach(s=>s.classList.toggle('on',s.dataset.c===color));
@@ -1920,7 +1958,7 @@ function introCard(c,W,H,o){
  c.setTransform(1,0,0,1,0,0); c.fillStyle='rgba(5,12,8,.78)'; c.fillRect(0,0,W,H);
  c.textAlign='center'; c.textBaseline='middle';
  c.fillStyle='#3ddc84'; c.font='800 26px system-ui,sans-serif'; c.fillText(o.sub||'',W/2,H/2-86);
- c.fillStyle='#fff'; c.font='800 58px system-ui,sans-serif'; c.fillText(o.title,W/2,H/2-26);
+ c.fillStyle='#fff'; {let fs=58; do{c.font=`800 ${fs}px system-ui,sans-serif`; fs-=2;}while(fs>26&&c.measureText(o.title).width>W-120);} c.fillText(o.title,W/2,H/2-26);
  if(o.desc){c.font='600 26px system-ui,sans-serif'; c.fillStyle='#d3ddd6'; wrapLines(c,o.desc,W-260).slice(0,3).forEach((l,i)=>c.fillText(l,W/2,H/2+40+i*36));}
  c.font='700 20px system-ui,sans-serif'; c.fillStyle='rgba(255,255,255,.6)'; c.fillText('Antrenör Tahtası · by SERKAN İNAL',W/2,H-40);
  c.textAlign='left';
@@ -1936,7 +1974,7 @@ const canAutoVoice=()=>!!nativePlugin('TtsFile');
 const canMic=()=>!!(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia);
 async function synthClip(ac,text){
  const P=nativePlugin('TtsFile'); if(!P) throw new Error('Otomatik ses yalnızca telefondaki uygulamada (APK) çalışır');
- const r=await P.synthesize({text,lang:'tr-TR',rate:1.0});
+ const r=await P.synthesize({text,lang:'tr-TR',rate:1.05});
  const bin=atob(r.data), buf=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) buf[i]=bin.charCodeAt(i);
  return await new Promise((res,rej)=>ac.decodeAudioData(buf.buffer,res,rej));
 }
@@ -1950,7 +1988,8 @@ async function makeVideo(o,onProg,opt={}){
  try{
   if(wantAudio){ac=new (window.AudioContext||window.webkitAudioContext)(); try{await ac.resume();}catch(e){} dest=ac.createMediaStreamDestination();}
   if(voice==='auto'){
-   const texts=[`${o.title}. ${o.desc||''}`].concat(o.fr.slice(0,n).map((f,i)=>`Adım ${i+1}. ${f.cap}`));
+   const sc=narrationScript(o.title,o.desc,frameCaps(o.fr),o.kind||'tactic');
+   const texts=[sc.intro].concat(sc.steps.map(t=>t||' '),[sc.outro]);
    clips=[];
    for(let k=0;k<texts.length;k++){status(`Ses hazırlanıyor ${k+1}/${texts.length}`); clips.push(await synthClip(ac,texts[k]));}
   }
@@ -1959,13 +1998,13 @@ async function makeVideo(o,onProg,opt={}){
    ac.createMediaStreamSource(mic).connect(dest);
   }
   // zaman çizelgesi: ses süresine göre uzar
-  const MOVE=1700, baseHold=o.caps?(voice==='mic'?3800:2300):1100;
-  const segs=[]; let T=0;
+  const MOVE=1700, baseHold=o.caps?(voice==='mic'?3800:voice==='auto'?300:1500):900;
+  const segs=[]; let T=0; let total=0;
   const introD=Math.max(o.desc!==undefined?3000:1200, clips?clips[0].duration*1000+500:0);
   segs.push({k:'intro',t:T,d:introD,clip:clips&&clips[0]}); T+=introD;
   for(let i=0;i<n;i++){const c=clips&&clips[i+1]; const d=Math.max(baseHold+MOVE,c?c.duration*1000+700:0); segs.push({k:'step',i,t:T,d,hold:d-MOVE,clip:c}); T+=d;}
-  segs.push({k:'end',t:T,d:2000}); T+=2000;
-  const total=T;
+  {const c=clips&&clips[n+1]; const d=Math.max(2600,c?c.duration*1000+900:0); segs.push({k:'end',t:T,d,clip:c}); T+=d;}
+  total=T;
   const G={ctx,CW,CH,dpr,V,frames,fi,curDrill,mode,playing};
   const swap=()=>{ctx=oc2;CW=W;CH=H;dpr=1;frames=o.fr;mode='drill';curDrill={view:o.view};playing=true;computeView();};
   const back=()=>{({ctx,CW,CH,dpr,V,frames,fi,curDrill,mode,playing}=G);};
@@ -1975,10 +2014,10 @@ async function makeVideo(o,onProg,opt={}){
     let s=segs[0]; for(const x of segs) if(x.t<=t) s=x;
     if(s.k==='intro'){fi=0; render(); introCard(oc2,W,H,o); return;}
     let cap='',step='';
-    if(s.k==='end'){fi=n; render(); cap=o.caps?o.fr[n].cap:''; step=o.caps?'✓':`Kare ${n+1}/${n+1}`;}
-    else{const i=s.i, r=t-s.t; fi=i; if(r<s.hold) render(); else render(interp(o.fr[i],o.fr[i+1],ease(Math.min(1,(r-s.hold)/MOVE))),o.fr[i].drawings); cap=o.caps?o.fr[i].cap:''; step=o.caps?`${i+1}/${n}`:`Kare ${i+1}/${n+1}`;}
+    if(s.k==='end'){fi=n; render(); cap=o.caps?(o.fr[n].cap||'✓ Hazırız!'):''; step='';}
+    else{const i=s.i, r=t-s.t; fi=i; if(r<s.hold) render(); else render(interp(o.fr[i],o.fr[i+1],ease(Math.min(1,(r-s.hold)/MOVE))),o.fr[i].drawings); cap=o.caps?o.fr[i].cap:''; step='';}
     videoOverlay(oc2,W,H,{title:o.title,sub:o.sub,cap,step:o.caps?step:''});
-    if(!o.caps){oc2.font='800 24px system-ui,sans-serif'; oc2.fillStyle='rgba(5,12,8,.82)'; rr(oc2,W-170,16,150,48,12); oc2.fill(); oc2.fillStyle='#fff'; oc2.textAlign='center'; oc2.textBaseline='middle'; oc2.fillText(step,W-95,41); oc2.textAlign='left';}
+    oc2.fillStyle='#3ddc84'; oc2.fillRect(0,H-5,W*Math.min(1,t/total),5);
     if(voice==='mic'){oc2.fillStyle='#ff3b30'; oc2.beginPath(); oc2.arc(W-34,H-46,9,0,Math.PI*2); oc2.fill();}
    } finally {back();}
   };
@@ -2159,7 +2198,7 @@ function openSession(){
   };
  });
 }
-function drillVideoOpts(d){const a=AGES.find(x=>x.k===d.age); return {fr:buildDrill(d),view:d.view,title:d.ad,sub:(a.k==='A'?'A Takım':a.k)+' · '+d.tur,desc:d.amac,caps:true};}
+function drillVideoOpts(d){const a=AGES.find(x=>x.k===d.age); return {fr:buildDrill(d),view:d.view,title:d.ad,sub:(a.k==='A'?'A Takım':a.k)+' · '+d.tur,desc:d.amac,caps:true,kind:'drill'};}
 function openShareDrill(d){
  if(playing) stopPlay();
  const on=()=>S.session.includes(d.id);
@@ -3207,7 +3246,8 @@ function openCoach(){
   };
   const act=(a,v)=>{
    const res=coachCtx.res;
-   if(a==='watch'){closeModal(); fi=0; updateUI(); render2(); setTimeout(()=>play(false),300);}
+   if(a==='watch'&&res){closeModal(); computeView(); openCinema({fr:clone(res.frames),view:[V.wx0,V.wy0,V.ww,V.wh],title:res.ad,sub:S.team||'Maç taktiği',desc:res.note.amac,kind:'tactic',onShare:()=>openTacticShare(res)});}
+   else if(a==='watch'){closeModal(); fi=0; updateUI(); render2(); setTimeout(()=>play(false),300);}
    else if(a==='side'){send(v);}
    else if(a==='share'&&res){closeModal(); openTacticShare(res);}
    else if(a==='text'&&res){openWhatsApp(tacticNote(res));}
@@ -3239,10 +3279,10 @@ function openCoach(){
    add('bot',`<div class="ptitle">${esc(res.ad)} <span class="tag">${esc(res.kat)}</span></div>
     ${res.why?`<div style="color:var(--acc);margin-bottom:4px">💡 ${esc(res.why)}</div>`:''}<div>${esc(res.note.amac)}</div>
     ${res.auto?`<div class="muted">Sağ kanadı seçtim. <button class="pb sm" data-act="side" data-v="sol">Sol kanattan yap</button></div>`:''}
-    <ol class="steps">${res.steps.map(s=>`<li>${esc(s)}</li>`).join('')}</ol>
+    <div class="muted" style="margin-top:6px">Oyunun akışı:</div><div>${esc(res.steps.join(' → '))}</div>
     ${g?`<div class="muted" style="margin-top:6px">Oyuncu görevleri:</div><ul class="gor">${g}</ul>`:''}
     ${res.warn&&res.warn.length?'<div class="vtw">'+res.warn.map(esc).join('<br>')+'</div>':''}
-    <div class="row" style="margin-top:8px"><button class="pb pri sm" data-act="watch">▶ Tahtada izle</button><button class="pb sm wa2" data-act="share">Oyunculara gönder (video + yazı)</button><button class="pb sm" data-act="text">Sadece yazı</button></div>`);
+    <div class="row" style="margin-top:8px"><button class="pb pri sm" data-act="watch">▶ Videoyu izle (sesli)</button><button class="pb sm wa2" data-act="share">Oyunculara gönder (video + yazı)</button><button class="pb sm" data-act="text">Sadece yazı</button></div>`);
   }
   m.querySelector('#cSend').onclick=()=>send();
   ta.onkeydown=e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault(); send();}};
@@ -3264,6 +3304,51 @@ function openCoach(){
   };
  },'sheet tall');
 }
+/* ---------- Video gibi izle: kesintisiz animasyon + motive eden sesli anlatım ---------- */
+function openCinema(o){
+ if(playing) stopPlay(); TTS.stop(); unlockSpeech();
+ const W=1280,H=720, n=o.fr.length-1, sc=narrationScript(o.title,o.desc,frameCaps(o.fr),o.kind||'tactic');
+ const ov=document.createElement('div'); ov.id='cine';
+ ov.innerHTML=`<canvas width="${W}" height="${H}"></canvas><div class="cbar"><button class="pb" data-c="re">⟲ Baştan</button><button class="pb" data-c="mu"></button>${o.onShare?'<button class="pb wa2" data-c="sh">Oyunculara gönder</button>':''}<button class="pb" data-c="ed">Tahtada düzenle</button><button class="pb pri" data-c="x">Kapat</button></div>`;
+ document.body.appendChild(ov);
+ const cv=ov.querySelector('canvas'), c2=cv.getContext('2d');
+ let st={k:'intro',t0:performance.now()}, tok=0, alive=true, muted=!S.voice;
+ const mb=ov.querySelector('[data-c=mu]'); const mlab=()=>mb.textContent=muted?'🔇 Ses kapalı':'🔊 Ses açık'; mlab();
+ const MOVE=1700, LEAD=250;
+ const wait=ms=>new Promise(r=>setTimeout(r,ms));
+ const say=t=>muted||!t?Promise.resolve():TTS.speak(t);
+ const draw=now=>{
+  const G={ctx,CW,CH,dpr,V,frames,fi,curDrill,mode,playing};
+  ctx=c2;CW=W;CH=H;dpr=1;frames=o.fr;mode='drill';curDrill={view:o.view};playing=true;computeView();
+  try{
+   if(st.k==='intro'){fi=0; render(); introCard(c2,W,H,o);}
+   else if(st.k==='step'){const i=st.i, r=now-st.t0-LEAD; fi=i; if(r<=0) render(); else render(interp(o.fr[i],o.fr[i+1],ease(Math.min(1,r/MOVE))),o.fr[i].drawings);
+    videoOverlay(c2,W,H,{title:o.title,sub:o.sub,cap:o.fr[i].cap||''});}
+   else {fi=n; render(); videoOverlay(c2,W,H,{title:o.title,sub:o.sub,cap:'✓ Hazırız! Hadi sahaya!'});}
+   const prog=st.k==='intro'?0:st.k==='end'?1:(st.i+Math.min(1,Math.max(0,(now-st.t0-LEAD)/MOVE)))/n;
+   c2.setTransform(1,0,0,1,0,0); c2.fillStyle='rgba(255,255,255,.15)'; c2.fillRect(0,H-6,W,6); c2.fillStyle='#3ddc84'; c2.fillRect(0,H-6,W*prog,6);
+  } finally {({ctx,CW,CH,dpr,V,frames,fi,curDrill,mode,playing}=G);}
+ };
+ const loop=now=>{if(!alive) return; draw(now); requestAnimationFrame(loop);};
+ requestAnimationFrame(loop);
+ async function run(){
+  const my=++tok; TTS.stop(); const ok=()=>alive&&my===tok;
+  st={k:'intro',t0:performance.now()}; await Promise.all([say(sc.intro),wait(2400)]); if(!ok()) return;
+  for(let i=0;i<n;i++){
+   st={k:'step',i,t0:performance.now()};
+   await Promise.all([say(sc.steps[i]),wait(LEAD+MOVE+150)]); if(!ok()) return;
+  }
+  st={k:'end',t0:performance.now()}; await say(sc.outro);
+ }
+ const close=()=>{alive=false; tok++; TTS.stop(); ov.remove(); render();};
+ ov.querySelector('[data-c=re]').onclick=()=>run();
+ mb.onclick=()=>{muted=!muted; if(muted) TTS.stop(); else {S.voice=true; persist();} mlab();};
+ ov.querySelector('[data-c=x]').onclick=close;
+ ov.querySelector('[data-c=ed]').onclick=()=>{close(); fi=0; updateUI(); render();};
+ const sh=ov.querySelector('[data-c=sh]'); if(sh) sh.onclick=()=>{close(); o.onShare();};
+ cv.onclick=()=>run();
+ run();
+}
 function openTacticShare(res){
  computeView(); const view=[V.wx0,V.wy0,V.ww,V.wh]; const text=tacticNote(res);
  openModal(`<div class="shead"><h3>Oyunculara gönder</h3><button class="pb" id="sC">Kapat</button></div>
@@ -3274,7 +3359,7 @@ function openTacticShare(res){
   <button class="bigb vid" id="waT" style="border-color:var(--line);height:44px;font-size:13px">Sadece yazıyı gönder</button>`,m=>{
   m.querySelector('#sC').onclick=closeModal; bindVoicePicker(m);
   m.querySelector('#waT').onclick=()=>openWhatsApp(m.querySelector('#tN').value);
-  m.querySelector('#mkV').onclick=()=>videoUI(m,[{label:res.ad,opts:{fr:clone(frames),view,title:res.ad,sub:S.team||'Maç taktiği',caps:true}}],m.querySelector('#tN').value,true);
+  m.querySelector('#mkV').onclick=()=>videoUI(m,[{label:res.ad,opts:{fr:clone(res.frames),view,title:res.ad,sub:S.team||'Maç taktiği',desc:res.note.amac,caps:true,kind:'tactic'}}],m.querySelector('#tN').value,true);
  });
 }
 
