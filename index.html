@@ -81,6 +81,9 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;displa
 .recui .cdn.on{display:flex}
 .recui .tele{margin-top:8px}.recui .tele small{display:block;color:var(--acc);font-weight:800;font-size:11px;letter-spacing:1px;margin-top:6px}
 .recui .tele .now{font-size:17px;font-weight:700;line-height:1.35}.recui .tele .nxt{font-size:13px;color:var(--mut)}
+#zbtn{position:absolute;right:10px;top:10px;display:none;flex-direction:column;gap:6px;z-index:5}#zbtn.show{display:flex}
+#zbtn button{width:40px;height:40px;border-radius:12px;border:1px solid rgba(255,255,255,.25);background:rgba(8,20,13,.72);color:#fff;font:800 22px/1 system-ui;backdrop-filter:blur(6px);cursor:pointer}
+#zbtn button:active{background:var(--acc);color:#04140b}
 #cine .cbar{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
 .chip{min-width:40px;height:34px;border-radius:9px;background:var(--panel2);border:1px solid var(--line);color:var(--tx);font:700 14px system-ui;flex:none;cursor:pointer;padding:0 10px}
 .chip.on{background:var(--acc);color:var(--accd);border-color:var(--acc)}
@@ -314,7 +317,7 @@ body.m-home #capOv,body.m-lib #capOv{display:none!important}
    <div class="sep"></div>
    <div id="colors" style="display:contents"></div>
   </nav>
-  <div id="stage"><canvas id="cv"></canvas><div id="hint"></div><div id="capOv"></div></div>
+  <div id="stage"><canvas id="cv"></canvas><div id="hint"></div><div id="capOv"></div><div id="zbtn"><button id="zIn" title="Yakınlaştır">+</button><button id="zOut" title="Uzaklaştır">−</button><button id="zRst" title="Tüm saha">⤢</button></div></div>
   <aside class="side" id="items">
    <button class="btn it" id="bForm" title="Diziliş seç" data-i="formation"><b style="font-size:10px">Diziliş</b></button>
    <div class="sep"></div>
@@ -5734,12 +5737,22 @@ const cv=$('#cv'); let ctx=cv.getContext('2d'); const MAINCTX=ctx;
 let dpr=1, CW=0, CH=0, V={};
 
 /* ---------- View transform ---------- */
+const ZM={z:1,cx:null,cy:null,key:null,base:null};
 function computeView(){
  const m=3.5;
  let wx0=-m, wy0=-m, ww=FL+2*m, wh=FW+2*m;
  if(mode==='drill'&&curDrill){[wx0,wy0,ww,wh]=curDrill.view;}
  else if(S.view==='half'){wx0=FL/2-3; ww=FL/2+3+m;}
  else if(S.view==='custom'&&S.vrect){[wx0,wy0,ww,wh]=S.vrect;}
+ if(ctx===MAINCTX){
+  const key=mode+'|'+(curDrill&&mode==='drill'?curDrill.ad:'')+'|'+S.view+'|'+wx0+','+wy0+','+ww+','+wh;
+  if(ZM.key!==key){ZM.key=key; ZM.z=1; ZM.cx=null; ZM.cy=null;}
+  ZM.base=[wx0,wy0,ww,wh];
+  if(ZM.z>1.001){const nw=ww/ZM.z, nh=wh/ZM.z, cl=(v,a,b)=>Math.max(a,Math.min(b,v));
+   const cx=cl(ZM.cx??wx0+ww/2,wx0+nw/2,wx0+ww-nw/2), cy=cl(ZM.cy??wy0+wh/2,wy0+nh/2,wy0+wh-nh/2); ZM.cx=cx; ZM.cy=cy;
+   wx0=cx-nw/2; wy0=cy-nh/2; ww=nw; wh=nh;}
+  const zb=document.getElementById('zbtn'); if(zb){zb.classList.toggle('show',mode==='board'||mode==='drill'); const r=document.getElementById('zRst'); if(r) r.style.display=ZM.z>1.01?'':'none';}
+ }
  let vertical=S.orient==='v'||(S.orient==='auto'&&CH>CW*1.05);
  if(mode==='drill'&&S.orient==='auto') vertical=Math.min(CW/wh,CH/ww)>Math.min(CW/ww,CH/wh)*1.08;
  const sw=vertical?wh:ww, sh=vertical?ww:wh;
@@ -6115,7 +6128,8 @@ function hitObject3D(qx,qy){
 }
 /* ---------- GERÇEKÇİ GÖRÜNÜM: WebGL stadyum, çim, tribün, hareketli futbolcular ---------- */
 const RL={ok:null}; let PJR=null;
-const realSz=()=>Math.max(1.2,Math.min(2.7,V.ww/105*2.7))*S.size;
+const baseWW=()=>(ctx===MAINCTX&&ZM.base&&ZM.z>1.001)?ZM.base[2]:V.ww;
+const realSz=()=>Math.max(1.2,Math.min(2.7,baseWW()/105*2.7))*S.size/((ctx===MAINCTX&&ZM.z>1.001)?Math.pow(ZM.z,.45):1);
 const isReal=()=>S.vis==='real'&&realOK();
 function realOK(){
  if(RL.ok!==null) return RL.ok;
@@ -6266,7 +6280,7 @@ function makeThing(o){
 function fitCamera(cam,W,H){
  const T=THREE, vert=V.vertical, res=V.res||0;
  const x0=V.wx0,x1=V.wx0+V.ww,y0=V.wy0,y1=V.wy0+V.wh, cx=(x0+x1)/2, cy=(y0+y1)/2;
- const small=V.ww<60;
+ const small=baseWW()<60;
  const E=(vert?44:(small?46:38))*Math.PI/180;
  if(RL.stands){RL.stands.S.visible=vert; RL.stands.W.visible=!vert;}
  cam.aspect=W/H; cam.fov=small?44:38; cam.updateProjectionMatrix();
@@ -6435,7 +6449,7 @@ let rawP=[0,0];
 const pos=e=>{const r=cv.getBoundingClientRect(); rawP=[e.clientX-r.left,e.clientY-r.top]; if(isReal()&&PJR){const w=realPick(rawP[0],rawP[1]); return w?w2s(w[0],w[1]):rawP;} return is3D()&&PJM?PJM.inv(rawP[0],rawP[1]):rawP;};
 const clampW=(x,y)=>[Math.max(V.wx0+.5,Math.min(V.wx0+V.ww-.5,x)),Math.max(V.wy0+.5,Math.min(V.wy0+V.wh-.5,y))];
 cv.addEventListener('pointerdown',e=>{
- if(mode==='drill'){togglePlay(); return;}
+ if(mode==='drill'){ZG.tapT=Date.now(); return;}
  if(mode!=='board'||playing||$('#modal').classList.contains('show')) return;
  e.preventDefault(); try{cv.setPointerCapture(e.pointerId);}catch(_){}
  const [X,Y]=pos(e), [wx,wy]=s2w(X,Y);
@@ -6454,7 +6468,7 @@ cv.addEventListener('pointerdown',e=>{
   }
   const d=hitDrawing(X,Y);
   if(d){ptrs.set(e.pointerId,{k:'drw',d,last:[wx,wy],moved:false}); return;}
-  selObj=null; render(); return;
+  selObj=null; if(ZM.z>1.001){const r=rawXY(e); ptrs.set(e.pointerId,{k:'pan',w0:worldAtRaw(r[0],r[1])});} render(); return;
  }
  if(tool==='eraser'){const st={k:'erase',did:false}; ptrs.set(e.pointerId,st); eraseAt(X,Y,st); return;}
  if(tool==='text'){askText('Metin ekle','',t=>{if(!t)return; beginChange(); cur().drawings.push({type:'text',text:t,color,pts:[[R2(wx),R2(wy)]]}); afterChange();}); return;}
@@ -6467,6 +6481,7 @@ cv.addEventListener('pointermove',e=>{
  const st=ptrs.get(e.pointerId); if(!st) return;
  e.preventDefault();
  const [X,Y]=pos(e), [wx,wy]=s2w(X,Y);
+ if(st.k==='pan'){const r=rawXY(e); panBy(st.w0,r[0],r[1]); return;}
  if(st.k==='obj'){
   if(!st.moved&&Math.hypot(X-st.sx,Y-st.sy)<4) return;
   if(!st.moved){beginChange(); st.moved=true; clearTimeout(longTimer);}
@@ -6482,6 +6497,7 @@ cv.addEventListener('pointermove',e=>{
  } else if(st.k==='erase') eraseAt(X,Y,st);
 },{passive:false});
 function endPtr(e){
+ if(mode==='drill'){ if(ZG.tapT&&!ZG.used&&Date.now()-ZG.tapT<450) togglePlay(); ZG.tapT=0; return; }
  const st=ptrs.get(e.pointerId); if(!st) return; ptrs.delete(e.pointerId); clearTimeout(longTimer);
  if(st.k==='obj'||st.k==='drw'){if(st.moved) afterChange();}
  else if(st.k==='erase'){if(st.did) afterChange();}
@@ -6491,6 +6507,43 @@ function endPtr(e){
  }
 }
 cv.addEventListener('pointerup',endPtr); cv.addEventListener('pointercancel',endPtr);
+/* ---------- Yakınlaştırma / uzaklaştırma ---------- */
+const ZG={pts:new Map(),g:null,used:false};
+const rawXY=e=>{const r=cv.getBoundingClientRect(); return [e.clientX-r.left,e.clientY-r.top];};
+function worldAtRaw(X,Y){ if(isReal()&&PJR){const w=realPick(X,Y); if(w) return w;} const q=is3D()&&PJM?PJM.inv(X,Y):[X,Y]; return s2w(q[0],q[1]); }
+function setZoom(z,ax,ay){ // ax,ay: ekranda sabit kalacak nokta
+ z=Math.max(1,Math.min(6,z)); const before=ax!=null?worldAtRaw(ax,ay):null;
+ ZM.z=z; if(z<=1.001){ZM.cx=ZM.cy=null;} computeView(); render();
+ if(before&&z>1.001){const now=worldAtRaw(ax,ay); ZM.cx=(ZM.cx??0)+(before[0]-now[0]); ZM.cy=(ZM.cy??0)+(before[1]-now[1]); computeView(); render();}
+}
+function panBy(w0,X,Y){const now=worldAtRaw(X,Y); ZM.cx+=w0[0]-now[0]; ZM.cy+=w0[1]-now[1]; computeView(); render();}
+cv.addEventListener('pointerdown',e=>{
+ if(mode!=='board'&&mode!=='drill') return;
+ ZG.pts.set(e.pointerId,rawXY(e));
+ if(ZG.pts.size===1) ZG.used=false;
+ if(ZG.pts.size===2){
+  e.stopImmediatePropagation(); e.preventDefault();
+  ptrs.clear(); drawingNow=null; clearTimeout(longTimer);
+  const [a,b]=[...ZG.pts.values()], mid=[(a[0]+b[0])/2,(a[1]+b[1])/2];
+  ZG.g={d0:Math.hypot(a[0]-b[0],a[1]-b[1])||1,z0:ZM.z,w0:worldAtRaw(mid[0],mid[1])}; ZG.used=true; render();
+ }
+},{capture:true});
+cv.addEventListener('pointermove',e=>{
+ if(!ZG.pts.has(e.pointerId)) return; ZG.pts.set(e.pointerId,rawXY(e));
+ if(!ZG.g||ZG.pts.size<2) return;
+ e.stopImmediatePropagation(); e.preventDefault();
+ const [a,b]=[...ZG.pts.values()], mid=[(a[0]+b[0])/2,(a[1]+b[1])/2], d=Math.hypot(a[0]-b[0],a[1]-b[1]);
+ ZM.z=Math.max(1,Math.min(6,ZG.g.z0*d/ZG.g.d0)); if(ZM.z<=1.001){ZM.cx=ZM.cy=null; computeView(); render(); return;}
+ if(ZM.cx==null){ZM.cx=ZG.g.w0[0]; ZM.cy=ZG.g.w0[1];}
+ computeView(); panBy(ZG.g.w0,mid[0],mid[1]);
+},{capture:true});
+const zEnd=e=>{ if(!ZG.pts.has(e.pointerId)) return; ZG.pts.delete(e.pointerId); if(ZG.g){e.stopImmediatePropagation(); if(ZG.pts.size<2) ZG.g=null;} };
+cv.addEventListener('pointerup',zEnd,{capture:true}); cv.addEventListener('pointercancel',zEnd,{capture:true});
+cv.addEventListener('wheel',e=>{ if(mode!=='board'&&mode!=='drill') return; e.preventDefault(); const [X,Y]=rawXY(e); setZoom(ZM.z*Math.exp(-e.deltaY*.0015),X,Y); },{passive:false});
+$('#zIn').onclick=e=>{e.stopPropagation(); setZoom(ZM.z*1.4,CW/2,CH/2);};
+$('#zOut').onclick=e=>{e.stopPropagation(); setZoom(ZM.z/1.4,CW/2,CH/2);};
+$('#zRst').onclick=e=>{e.stopPropagation(); setZoom(1);};
+['zIn','zOut','zRst'].forEach(id=>$('#'+id).addEventListener('pointerdown',e=>e.stopPropagation()));
 function finalize(d){
  const sp=d.pts.map(p=>w2s(p[0],p[1]));
  if(['line','rect','circle'].includes(d.type)){if(dist(sp[0],sp[1])<10) return false;}
