@@ -172,6 +172,20 @@ body.m-home #home,body.m-lib #lib{display:flex}
 #mbody textarea{width:100%;min-height:96px;margin-top:10px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--tx);font:500 15px/1.45 system-ui;padding:10px 12px;-webkit-user-select:text;user-select:text;resize:vertical}
 .vtp{margin-top:10px;font-size:13px;line-height:1.5;color:#d3ddd6}.vtp ol{margin:6px 0 0;padding-left:20px;display:flex;flex-direction:column;gap:4px}.vtp b{color:var(--acc)}
 .vtw{margin-top:8px;color:#ffb020;font-size:12.5px}
+.shead h3{display:flex;align-items:center;gap:8px}.shead h3 svg{width:24px;height:24px;fill:none;stroke:var(--acc);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+#modal.sheet.tall #mbody{max-height:86vh;display:flex;flex-direction:column}
+.chat{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding:6px 2px;min-height:160px;max-height:52vh}
+.msg{max-width:92%;padding:10px 12px;border-radius:14px;font-size:14px;line-height:1.45}
+.msg.bot{background:var(--panel2);align-self:flex-start;border-top-left-radius:4px}
+.msg.me{background:var(--acc);color:var(--accd);align-self:flex-end;border-top-right-radius:4px;font-weight:600}
+.msg .ptitle{font-weight:800;font-size:15px;margin-bottom:4px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.msg .steps,.msg .gor{margin:6px 0 0;padding-left:20px;display:flex;flex-direction:column;gap:3px}
+.msg .muted{font-size:12.5px}
+.pb.sm{height:34px;padding:0 10px;font-size:12.5px;margin:3px 2px}
+.pb.wa2{background:#25d366;color:#05301a;border-color:#25d366}
+.chips2{display:flex;gap:4px;overflow-x:auto;padding:6px 0;scrollbar-width:none;flex:none}.chips2 .pb{flex:none}
+.cin{display:flex;gap:6px;align-items:flex-end;flex:none}.cin textarea{flex:1;margin:0!important;min-height:48px!important}
+.cin .btn{height:48px;width:48px;flex:none;border-radius:12px}
 /* mode visibility */
 body.m-drill #tools,body.m-drill #items,body.m-drill #fbar,body.m-drill .bo{display:none!important}
 body:not(.m-drill) #dpanel,body:not(.m-drill) #dbar,body:not(.m-drill) .dr{display:none!important}
@@ -240,6 +254,7 @@ body.m-home #capOv,body.m-lib #capOv{display:none!important}
   <button class="btn dr" id="bBackLib" data-i="back"><span class="hide-p">Antrenmanlar</span></button>
   <div class="brand"><span class="bt bo">Taktik Tahtası</span><span class="dr" id="dTitle"></span></div>
   <button class="btn hl bo" id="bForm2" data-i="formation"><span>Diziliş</span></button>
+  <button class="btn hl fill bo" id="bCoach" data-i="bot"><span>Taktik Ver</span></button>
   <button class="btn bo" id="bUndo" title="Geri al" data-i="undo"></button>
   <button class="btn bo" id="bRedo" title="Yinele" data-i="redo"></button>
   <button class="btn bo" id="bView" title="Saha görünümü" data-i="field"><span id="viewTxt" class="hide-p">Tam Saha</span></button>
@@ -379,6 +394,8 @@ const ICONS={
  video:'<rect x="3" y="6" width="13" height="12" rx="2"/><path d="M16 10l5-3v10l-5-3z"/>',
  wa:'<path d="M4 20l1.3-4A8 8 0 1112 20a8 8 0 01-4-1z"/><path d="M9 9.5c0 3 2.5 5.5 5.5 5.5l1-1.5-2-1-1 .8a4 4 0 01-1.8-1.8l.8-1-1-2z" fill="currentColor" stroke="none"/>',
  mic:'<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0014 0M12 18v3M8 21h8"/>',
+ bot:'<rect x="4" y="7" width="16" height="12" rx="3"/><path d="M12 3v4M8.5 12h.01M15.5 12h.01M9 16h6"/>',
+ send:'<path d="M4 12l16-8-6 16-2.5-6.5z"/>',
  book:'<path d="M4 5h6a2 2 0 012 2v13a2 2 0 00-2-2H4zM20 5h-6a2 2 0 00-2 2v13a2 2 0 012-2h6z"/>'
 };
 const icon=n=>`<svg viewBox="0 0 24 24">${ICONS[n]}</svg>`;
@@ -2395,6 +2412,471 @@ function openVoiceTactic(){
  });
 }
 
+/* =================== TAKTİK ASİSTANI (çevrimdışı uzman sistem) =================== */
+/* Rol tespiti: tahtadaki dizilişten bek, stoper, 6, 8, 10, kanat, forvet bulunur. */
+function assignRoles(objs,T,side){
+ const f=objs.filter(o=>o.type==='player'&&o.team===T).map(o=>{const [u,v]=uvOf(o,T);return {o,u,v};}).sort((a,b)=>a.u-b.u);
+ const GK=objs.find(o=>o.type==='player'&&o.team==='GK'+T)||null;
+ const n=f.length; if(!n) return null;
+ const nd=n>=10?4:n>=7?3:n>=4?2:1, defs=f.slice(0,nd), rest=f.slice(nd);
+ const byV=a=>a.slice().sort((x,y)=>x.v-y.v);
+ const dv=byV(defs), maxU=rest.length?rest[rest.length-1].u:0;
+ const fw=rest.filter(p=>p.u>=maxU-7);
+ const ST=(fw.slice().sort((a,b)=>Math.abs(a.v-34)-Math.abs(b.v-34))[0]||rest[rest.length-1]||f[n-1]);
+ const others=rest.filter(p=>p!==ST);
+ const RW=byV(others).reverse().find(p=>p.v>40)||null, LW=byV(others).find(p=>p.v<28)||null;
+ const mids=others.filter(p=>p!==RW&&p!==LW);
+ const DM=mids.slice().sort((a,b)=>a.u-b.u)[0]||null;
+ const cm=mids.filter(p=>p!==DM);
+ const AM=cm.slice().sort((a,b)=>(b.u-Math.abs(b.v-34)*.6)-(a.u-Math.abs(a.v-34)*.6))[0]||null;
+ const cm2=cm.filter(p=>p!==AM);
+ const CMR=byV(cm2).reverse()[0]||AM||DM, CML=byV(cm2)[0]||AM||DM;
+ const LB=nd>=3?dv[0]:null, RB=nd>=3?dv[dv.length-1]:null;
+ const cbs=nd>=3?dv.slice(1,-1):dv, CBL=cbs[0], CBR=cbs[cbs.length-1];
+ const g=p=>p?p.o:null;
+ const R={GK, LB:g(LB),RB:g(RB),CBL:g(CBL),CBR:g(CBR),DM:g(DM),CML:g(CML),CMR:g(CMR),AM:g(AM||DM),LW:g(LW||CML),RW:g(RW||CMR),ST:g(ST),
+  defs:defs.map(p=>p.o),mids:mids.map(p=>p.o),fwds:fw.map(p=>p.o),all:f.map(p=>p.o)};
+ R.LB=R.LB||R.CBL; R.RB=R.RB||R.CBR;
+ const s=side==='L';
+ return Object.assign(R,{FB:s?R.LB:R.RB,FBo:s?R.RB:R.LB,CB:s?R.CBL:R.CBR,CBo:s?R.CBR:R.CBL,CM:s?R.CML:R.CMR,CMo:s?R.CML===R.CMR?R.DM:R.CMR:R.CML===R.CMR?R.DM:R.CML,W:s?R.LW:R.RW,Wo:s?R.RW:R.LW});
+}
+const ROLE_TR={GK:'kaleci',FB:'bek',FBo:'ters bek',CB:'stoper',CBo:'stoper',DM:'6 numara',CM:'orta saha',CMo:'orta saha',AM:'10 numara',W:'kanat',Wo:'ters kanat',ST:'forvet'};
+function datSuf(n){n=+n; if(isNaN(n)) return 'e'; const t=n%100; if(t%10===0){return {0:'a',10:'a',20:'ye',30:'a',40:'a',50:'ye',60:'a',70:'e',80:'e',90:'a'}[t]||'a';} return {1:'e',2:'ye',3:'e',4:'e',5:'e',6:'ya',7:'ye',8:'e',9:'a'}[t%10];}
+/* Simülatör: her adımda oyuncuları sağ kanat kuralına göre yazılan koordinatlara taşır (sol için aynalanır). */
+class TSim{
+ constructor(objects,T,side,react){
+  this.T=T; this.O=T==='A'?'B':'A'; this.side=side; this.react=react!==false;
+  this.objs=clone(objects); this.ball=this.objs.find(o=>o.type==='ball');
+  if(!this.ball){this.ball={id:uid++,type:'ball',x:52.5,y:34}; this.objs.push(this.ball);}
+  this.r=assignRoles(this.objs,T,side); this.o=assignRoles(this.objs,this.O,side==='R'?'L':'R');
+  this.start=null; this.snaps=[]; this.cap=null; this.owner=null; this.touched=new Set();
+ }
+ V(v){return this.side==='R'?v:68-v;}
+ P(p){if(!p) return [52,34]; const [u,v]=uvOf(p,this.T); return [u,this.side==='R'?v:68-v];}
+ feet(p){this.ball.x=R2(p.x+.8); this.ball.y=R2(p.y+.6);}
+ mv(p,u,v){ if(!p) return; const [x,y]=xyOf(u,this.V(v),this.T); p.x=R2(x); p.y=R2(y); this.touched.add(p.id); if(this.owner===p) this.feet(p); }
+ near(p,q,du,dv){ if(!p||!q) return; const [u,v]=this.P(q); this.mv(p,u+du,v+dv); }
+ give(p){ if(!p) return; this.owner=p; this.feet(p); }
+ pass(a,b){ if(!b) return; this.owner=b; this.feet(b); }
+ cross(a,b){ this.pass(a,b); }
+ drib(p,u,v){ if(!p) return; this.owner=p; this.mv(p,u,v); }
+ steal(p){ this.give(p); }
+ clear(u,v){ const [x,y]=xyOf(u,this.V(v),this.T); this.ball.x=R2(x); this.ball.y=R2(y); this.owner=null; }
+ shot(p){ const [x,y]=xyOf(104.7,this.V(33),this.T); this.ball.x=R2(x); this.ball.y=R2(y); this.owner=null; }
+ shotAt(T){ const [x,y]=T==='A'?[104.7,35]:[.3,33]; this.ball.x=x; this.ball.y=y; this.owner=null; }
+ doReact(){
+  if(!this.react) return;
+  const opp=this.objs.filter(o=>o.type==='player'&&o.team===this.O&&!this.touched.has(o.id));
+  const b=this.ball; opp.map(o=>({o,d:Math.hypot(o.x-b.x,o.y-b.y)})).filter(x=>x.d<26&&x.d>2.5).sort((a,c)=>a.d-c.d).slice(0,2).forEach(({o,d})=>{
+   const k=Math.min(.38,(d-2.2)/d); o.x=R2(o.x+(b.x-o.x)*k); o.y=R2(o.y+(b.y-o.y)*k);
+  });
+ }
+ step(cap){ if(this.cap==null) this.start=clone(this.objs); else {this.doReact(); this.snaps.push({cap:this.cap,objs:clone(this.objs)});} this.cap=cap; this.touched=new Set(); }
+ done(){
+  if(this.cap!=null){this.doReact(); this.snaps.push({cap:this.cap,objs:clone(this.objs)});}
+  const out=[{objects:this.start,drawings:[],cap:this.snaps[0]?this.snaps[0].cap:''}];
+  this.snaps.forEach((s,i)=>out.push({objects:s.objs,drawings:[],cap:this.snaps[i+1]?this.snaps[i+1].cap:''}));
+  for(let i=0;i<out.length-1;i++) out[i].drawings=autoArrows(out[i].objects,out[i+1].objects);
+  return out;
+ }
+}
+const N=p=>p?String(p.num):'?';
+const Nd=p=>p?`${p.num}’${datSuf(p.num)}`:'?';
+/* ---------- BİLGİ BANKASI ---------- */
+const PLAYBOOK=[
+/* ===== HÜCUM ===== */
+{id:'bindirme',ad:'Kanat Bindirme',kat:'Hücum',side:1,
+ re:/bindir|overlap|kanattan (yüklen|git|gidelim|hücum|oyna)|bek(ler)? (de )?hücuma|kanat ve bek|beki? (zayıf|yavaş|kötü)|2.?ye ?1 kanat/,
+ amac:'Kanatta sayısal üstünlük kurup bekin dışarıdan bindirmesiyle çizgiye inmek ve orta yapmak.',
+ ilke:['Kanat oyuncusu içeri sürünce bek dışarıdan bindirir','Ceza sahasında üç bölge dolu olmalı: ön direk, arka direk, penaltı noktası','Bek bindirirken 6 numara ve stoperler dengeyi korur'],
+ gorev:r=>[[r.W,'Topu al, içeri sürüp rakip beki üzerine çek, bindiren beke pas ver.'],[r.FB,'Kanat içeri girince dışarıdan bindir, çizgiye in ve orta yap.'],[r.ST,'Orta anında ön direğe koş.'],[r.Wo,'Arka direğe gir.'],[r.AM,'Penaltı noktasına gel, dönen topu kolla.'],[r.CM,'Topu kanada aç, bek bindirince onun boşluğunu kontrol et.'],[r.DM,'Geride kal: kontra atağa karşı denge.']],
+ build:(s,r)=>{ s.give(r.CM);
+  s.step(`${N(r.CM)} topu kanada, ${Nd(r.W)} açar · ${N(r.FB)} bindirmeye başlar`); s.mv(r.W,70,62); s.pass(r.CM,r.W); s.mv(r.FB,s.P(r.FB)[0]+12,61);
+  s.step(`${N(r.W)} içeri sürer, ${N(r.FB)} dışarıdan bindirir`); s.drib(r.W,80,51); s.mv(r.FB,84,64.5); s.mv(r.ST,86,38);
+  s.step(`Bindiren ${Nd(r.FB)} pas`); s.mv(r.FB,88,64.5); s.pass(r.W,r.FB); s.mv(r.Wo,86,22); s.mv(r.AM,82,40);
+  s.step(`${N(r.FB)} çizgiye iner · ön direk, arka direk, penaltı noktası dolar`); s.drib(r.FB,98,63); s.mv(r.ST,99,39); s.mv(r.Wo,99,28); s.mv(r.AM,93,35);
+  s.step(`Orta: ön direkte ${N(r.ST)}`); s.cross(r.FB,r.ST);
+  s.step('Bitiriş: GOL!'); s.shot(r.ST); }},
+{id:'underlap',ad:'İçeriden Bindirme (Underlap)',kat:'Hücum',side:1,
+ re:/içeriden bindir|underlap|bek ile stoper arası|kanal koşusu|8 numara (kanala|araya)/,
+ amac:'Kanat oyuncusu genişlikte kalırken orta saha oyuncusunun bek ile stoper arasından koşup geri çevirmesi.',
+ ilke:['Kanat oyuncusu çizgide kalır, rakip beki sabitler','Koşu bek ile stoper arasındaki kanaldan','Çizgiye inen oyuncu geri çevirir'],
+ gorev:r=>[[r.W,'Çizgide geniş kal, beki sabitle, içeri koşan arkadaşına pas ver.'],[r.CM,'Bek ile stoper arasından koş, çizgiye in ve geri çevir.'],[r.FB,'Arkadan destek ol, top kaybında hemen pres.'],[r.ST,'Ön direğe koşup stoperi çek.'],[r.AM,'Geri çevirme bölgesine (penaltı noktası önü) gel.']],
+ build:(s,r)=>{ s.give(r.FB);
+  s.step(`${N(r.FB)} kanada, ${Nd(r.W)} pas`); s.mv(r.W,76,64); s.pass(r.FB,r.W);
+  s.step(`${N(r.W)} çizgide bekler · ${N(r.CM)} bek–stoper arasından koşar`); s.mv(r.CM,91,52); s.mv(r.ST,90,38);
+  s.step(`İçeriye ara pası: ${N(r.CM)}`); s.pass(r.W,r.CM);
+  s.step(`${N(r.CM)} çizgiye iner · ${N(r.ST)} ön direğe, ${N(r.AM)} geri çevirme bölgesine`); s.drib(r.CM,99,50); s.mv(r.ST,99,38); s.mv(r.AM,90,40); s.mv(r.Wo,97,27);
+  s.step(`Geri çevirme: ${N(r.AM)}`); s.pass(r.CM,r.AM);
+  s.step('Bitiriş'); s.shot(r.AM); }},
+{id:'icekat',ad:'İçe Kat ve Şut (Ters Ayaklı Kanat)',kat:'Hücum',side:1,
+ re:/içe kat|içeri kat|ters ayak|kat edip|içeri sürüp şut|uzaktan şut/,
+ amac:'Ters ayaklı kanat oyuncusunun içeri kat edip güçlü ayağıyla uzak köşeye şut çekmesi.',
+ ilke:['Bek dışarıdan bindirip rakip beki meşgul eder','Forvet stoperi çekip şut açısı açar','Şut uzak köşeye, yerden'],
+ gorev:r=>[[r.W,'İçeri kat et, ilk fırsatta uzak köşeye şut.'],[r.FB,'Dışarıdan bindir: rakip beki meşgul et.'],[r.ST,'Stoperi kale önüne çek, dönen topu takip et.'],[r.CM,'Topu kanada aç, ceza sahası önünde dur.']],
+ build:(s,r)=>{ s.give(r.CM);
+  s.step(`${N(r.CM)} kanada pas`); s.mv(r.W,76,60); s.pass(r.CM,r.W);
+  s.step(`${N(r.W)} içeri kat eder · ${N(r.FB)} dışarıdan bindirir, ${N(r.ST)} stoperi çeker`); s.drib(r.W,86,44); s.mv(r.FB,88,64); s.mv(r.ST,97,30);
+  s.step('Uzak köşeye şut!'); s.shot(r.W); }},
+{id:'switch',ad:'Taraf Değiştirme (Diyagonal Pas)',kat:'Hücum',side:1,
+ re:/taraf değiştir|diyagonal|ters kanat|kanat değiştir|uzun çapraz|oyunu (çevir|değiştir)|öbür kanat/,
+ amac:'Rakibi bir tarafa çekip uzun diyagonal pasla boş kalan ters kanatta 1’e 1 yaratmak.',
+ ilke:['Rakip blok bir tarafa kayınca top hızla çevrilir','En fazla 2 pasta taraf değişir','Ters kanat çizgide ve geniş bekler'],
+ gorev:r=>[[r.FBo,'Topu bu tarafta tut, rakibi çek, stopere geri ver.'],[r.CBo,'Topu alınca beklemeden uzun diyagonali at.'],[r.W,'Çizgide geniş bekle, topu alınca 1’e 1 git.'],[r.ST,'Ceza sahasında arka direğe koş.']],
+ build:(s,r)=>{ s.give(r.FBo);
+  s.step(`Top ters tarafta: ${N(r.FBo)} rakibi o tarafa çeker`); s.drib(r.FBo,s.P(r.FBo)[0]+8,8); s.mv(r.Wo,62,6); s.mv(r.W,66,65);
+  s.step(`Geri pas: ${N(r.CBo)}`); s.mv(r.CBo,30,22); s.pass(r.FBo,r.CBo);
+  s.step(`Uzun diyagonal: ${N(r.W)} ters kanatta yalnız`); s.mv(r.W,72,64); s.pass(r.CBo,r.W);
+  s.step(`${N(r.W)} 1’e 1 · ${N(r.ST)} ceza sahasına`); s.drib(r.W,88,54); s.mv(r.ST,96,34); s.mv(r.Wo,92,22);
+  s.step('Şut ya da ters direğe pas'); s.shot(r.W); }},
+{id:'cutback',ad:'Geri Çevirme (Cut-back)',kat:'Hücum',side:1,
+ re:/geri çevir|cut.?back|çizgiye in(ip)? (geri|arkaya)|penaltı noktasına geri/,
+ amac:'Çizgiye inen oyuncunun topu penaltı noktası ile ceza sahası çizgisi arasına geri çevirmesi.',
+ ilke:['Forvetin ön direk koşusu stoperi çeker','Bitiren oyuncu geç gelir','Geri çevirme yerden ve sert'],
+ gorev:r=>[[r.W,'Savunma arkasına koş, çizgiye in, geri çevir.'],[r.ST,'Ön direğe koşup stoperi çek.'],[r.AM,'Geç gel, penaltı noktası önünden ilk dokunuşla vur.'],[r.CM,'Ceza sahası yayında dönen top için bekle.']],
+ build:(s,r)=>{ s.give(r.CM);
+  s.step(`Savunma arkasına ara pası: ${N(r.W)}`); s.mv(r.W,90,61); s.pass(r.CM,r.W);
+  s.step(`${N(r.W)} çizgiye iner · ${N(r.ST)} ön direğe, ${N(r.AM)} geri çevirme bölgesine`); s.drib(r.W,100,56); s.mv(r.ST,100,38); s.mv(r.AM,91,38); s.mv(r.CM,83,40);
+  s.step(`Geri çevir: ${N(r.AM)}`); s.pass(r.W,r.AM);
+  s.step('İlk dokunuşla bitiriş'); s.shot(r.AM); }},
+{id:'duvar',ad:'Duvar Pası (Ver–Kaç)',kat:'Hücum',side:0,
+ re:/duvar|ver.?kaç|1.?2|bir iki|verkaç/,
+ amac:'Savunmacıyı üzerine çekip pas verip arkasına koşarak dönüş pasıyla geçmek.',
+ ilke:['Pası verdiğin an koş','Duvar oyuncusu tek dokunuşla oynar','Pas koşunun önüne'],
+ gorev:r=>[[r.CM,'Savunmacıyı üzerine çek, forvete pas ver, hemen arkaya koş.'],[r.ST,'Gel, tek dokunuşla koşunun önüne bırak.']],
+ build:(s,r)=>{ s.give(r.CM);
+  s.step(`${N(r.CM)} savunmacının üzerine sürer`); s.drib(r.CM,s.P(r.CM)[0]+10,40);
+  s.step(`Duvar: ${N(r.ST)} gelir, pas`); s.mv(r.ST,s.P(r.CM)[0]+8,34); s.pass(r.CM,r.ST);
+  s.step(`${N(r.CM)} arkaya koşar · dönüş pası`); s.mv(r.CM,s.P(r.ST)[0]+12,40); s.pass(r.ST,r.CM);
+  s.step('Bitiriş'); s.shot(r.CM); }},
+{id:'ucuncu',ad:'Üçüncü Adam Koşusu',kat:'Hücum',side:0,
+ re:/üçüncü adam|3\. adam|third man/,
+ amac:'Dikey pas – bırakma – üçüncü oyuncunun savunma arkasına koşusu.',
+ ilke:['Forvet geri gelip dikey pası alır','Bırakma tek dokunuş','Üçüncü adam koşusu pas anında başlar'],
+ gorev:r=>[[r.DM,'Forvete dikey pas at.'],[r.ST,'Geri gel, tek dokunuşla 10 numaraya bırak.'],[r.AM,'Bırakmayı al, koşan arkadaşa ara pası ver.'],[r.CM,'Savunma arkasına koş: üçüncü adam sensin.']],
+ build:(s,r)=>{ s.give(r.DM);
+  s.step(`${N(r.ST)} geri gelir, ${N(r.DM)} dikey pas`); s.mv(r.ST,80,34); s.pass(r.DM,r.ST);
+  s.step(`Bırakma: ${N(r.AM)}`); s.mv(r.AM,76,40); s.pass(r.ST,r.AM);
+  s.step(`Üçüncü adam: ${N(r.CM)} savunma arkasına`); s.mv(r.CM,95,47); s.pass(r.AM,r.CM); s.mv(r.ST,92,33);
+  s.step('Bitiriş'); s.shot(r.CM); }},
+{id:'derinlik',ad:'Derinlik Koşusu ve Ara Pası',kat:'Hücum',side:0,
+ re:/ara pas|savunma arka|derinlik|arkaya (at|koş|top)|derine (koş|at)|kafa üstü|ofsaytı kır/,
+ amac:'Forvetin ters hareketle boşluk açıp savunma arkasına koşması ve zamanlı ara pası.',
+ ilke:['Önce ters hareket (geri gel gibi yap)','Koşu çapraz, ofsayt çizgisine dikkat','Pas koşunun önüne, kaleciden uzağa'],
+ gorev:r=>[[r.ST,'Geri gel gibi yap, sonra savunma arkasına çapraz koş.'],[r.CM,'Koşu başladığı an ara pası at.'],[r.W,'İçeri koş, dönen topu ya da ikinci direği kolla.']],
+ build:(s,r)=>{ s.give(r.CM);
+  s.step(`${N(r.ST)} geri gelir gibi yapar`); s.mv(r.ST,s.P(r.ST)[0]-4,36);
+  s.step(`Dönüp savunma arkasına · ara pası`); s.mv(r.ST,96,38); s.pass(r.CM,r.ST); s.mv(r.W,90,52);
+  s.step('Kaleciyle karşı karşıya: bitir'); s.shot(r.ST); }},
+{id:'geriden',ad:'Geriden Oyun Kurma',kat:'Hücum',side:1,
+ re:/geriden (oyun|kur|çık)|kaleciden (başla|oyna)|kısa oyna|kısa pasla çık|pres(i)? kır/,
+ amac:'Rakip baskı yaparken kaleci ve stoperlerle sayısal üstünlük kurup presi kırmak.',
+ ilke:['Stoperler ceza sahası köşelerine açılır','Kaleci artı oyuncudur','6 numara baskının gölgesinden çıkar','Bekler yüksek ve geniş'],
+ gorev:r=>[[r.GK,'Topu stopere ver, baskı gelirse geri pası al.'],[r.CB,'Ceza sahası köşesine açıl, 6 numarayı ya da beki bul.'],[r.CBo,'Genişle, ters tarafı aç.'],[r.DM,'Baskının gölgesinden çık, dönerek oyunu yönlendir.'],[r.FB,'Yüksek ve geniş dur, topu alınca kanada çık.'],[r.W,'Çizgide bekle, bekten topu al.']],
+ build:(s,r)=>{ s.give(r.GK);
+  s.step(`Kaleci stopere · stoperler genişler`); s.mv(r.CB,8,46); s.mv(r.CBo,8,22); s.pass(r.GK,r.CB); s.mv(r.FB,26,62);
+  s.step(`${N(r.DM)} gölgeden çıkar, pas`); s.mv(r.DM,18,38); s.pass(r.CB,r.DM);
+  s.step(`Dönüş: beke, ${Nd(r.FB)}`); s.pass(r.DM,r.FB);
+  s.step(`Bek kanada: ${Nd(r.W)} · pres kırıldı`); s.mv(r.W,52,64); s.drib(r.FB,34,62); s.pass(r.FB,r.W); }},
+{id:'uzun',ad:'Uzun Top ve İkinci Top',kat:'Hücum',side:1,
+ re:/uzun (top|oyna|pas)|direkt oyna|ikinci top|kafa topu|havadan/,
+ amac:'Rakip önde basınca presi uzun topla aşmak ve forvetin indirdiği ikinci topu kazanmak.',
+ ilke:['Uzun top forvetin göğsüne veya kafasına','Destek oyuncuları 8–10 m yakında','İkinci topu ilk alan kazanır'],
+ gorev:r=>[[r.CB,'Forvete uzun top at.'],[r.ST,'Topu kafa ya da göğüsle 10 numaraya indir.'],[r.AM,'İkinci top için forvetin yanında ol.'],[r.W,'İkinci top alınınca kanattan derine koş.']],
+ build:(s,r)=>{ s.give(r.CB);
+  s.step(`${N(r.CB)} forvete uzun top`); s.mv(r.ST,78,36); s.pass(r.CB,r.ST); s.mv(r.AM,72,40);
+  s.step(`${N(r.ST)} indirir: ikinci top ${N(r.AM)}`); s.mv(r.AM,74,40); s.pass(r.ST,r.AM);
+  s.step(`Hızla kanada: ${N(r.W)}`); s.mv(r.W,88,58); s.pass(r.AM,r.W); s.mv(r.ST,94,36);
+  s.step('Bitiriş'); s.shot(r.W); }},
+{id:'kontra',ad:'Kontra Atak',kat:'Geçiş',side:1,
+ re:/kontra|hızlı hücum|karşı atak|geçiş hücum|top kazanınca hızlı|hızlı çık/,
+ amac:'Top kazanıldığı anda rakip yerleşmeden en fazla 3–4 pasla kaleye ulaşmak.',
+ ilke:['İlk pas ileri','Kanatlar geniş ve hızlı koşar','En fazla 4 pas, 10 saniye','Arka direğe mutlaka koşu'],
+ gorev:r=>[[r.DM,'Topu kazanınca ilk pası ileri, 10 numaraya ver.'],[r.AM,'Topla hızla ilerle, savunmacıyı çek, kanada aç.'],[r.W,'Geniş ve hızlı koş.'],[r.Wo,'Ters taraftan arka direğe koş.'],[r.ST,'Kaleye doğru koş, ortaya gir.']],
+ build:(s,r)=>{ s.give(r.DM);
+  s.step(`Top kazanıldı! İlk pas ileri: ${N(r.AM)}`); s.pass(r.DM,r.AM); s.mv(r.W,s.P(r.W)[0]+14,60); s.mv(r.Wo,s.P(r.Wo)[0]+14,8); s.mv(r.ST,s.P(r.ST)[0]+10,34);
+  s.step(`${N(r.AM)} hızla sürer, kanatlar geniş koşar`); s.drib(r.AM,s.P(r.AM)[0]+18,36); s.mv(r.W,84,58); s.mv(r.Wo,84,12); s.mv(r.ST,88,32);
+  s.step(`Kanada: ${N(r.W)}`); s.pass(r.AM,r.W); s.mv(r.ST,95,34); s.mv(r.Wo,96,22);
+  s.step(`Kale önüne pas: ${N(r.ST)}`); s.drib(r.W,92,52); s.pass(r.W,r.ST);
+  s.step('GOL!'); s.shot(r.ST); }},
+{id:'sahip',ad:'Topa Sahip Olma (Pozisyonel Oyun)',kat:'Hücum',side:0,
+ re:/topa sahip|sabırl|pas yap|tiki ?taka|oyunu kontrol|topu (tut|dolaştır)|pozisyonel/,
+ amac:'Topu sabırla dolaştırıp rakibi yorarak boşluk açılınca ileri oynamak.',
+ ilke:['Her zaman iki pas seçeneği','Topu baskıdan uzak tarafa çevir','Genişlik: kanatlar çizgide','Boşluk açılınca dikine oyna'],
+ gorev:r=>[[r.CB,'Topu yerden dolaştır, acele etme.'],[r.DM,'Stoperlerin önünde sürekli pas açısı ver.'],[r.FB,'Geniş dur, çizgiyi kullan.'],[r.W,'Çizgide kal, genişliği koru.'],[r.AM,'Hatlar arasında boş kal, dikine pası bekle.']],
+ build:(s,r)=>{ s.give(r.CB);
+  s.step('Stoperler arası pas: sabır'); s.pass(r.CB,r.CBo);
+  s.step(`6 numaraya: ${N(r.DM)}`); s.mv(r.DM,s.P(r.DM)[0]-2,30); s.pass(r.CBo,r.DM);
+  s.step(`Ters tarafa: ${N(r.FB)}`); s.mv(r.FB,s.P(r.FB)[0]+4,63); s.pass(r.DM,r.FB);
+  s.step(`Boşluk açıldı: hatlar arasına, ${N(r.AM)}`); s.mv(r.AM,s.P(r.AM)[0]+2,44); s.pass(r.FB,r.AM);
+  s.step(`Dönüp forvete: ${N(r.ST)}`); s.mv(r.ST,92,36); s.pass(r.AM,r.ST); }},
+{id:'orta',ad:'Kanattan Orta',kat:'Hücum',side:1,
+ re:/orta (yap|aç|kes|at)|ortalar|kanattan orta|kafa(yla)? gol|ceza sahasına orta/,
+ amac:'Kanat oyuncusunun çizgiye inip ceza sahasındaki üç bölgeye orta yapması.',
+ ilke:['Orta öncesi başı kaldır','Ön direk – penaltı noktası – arka direk','Koşu ortadan hemen önce'],
+ gorev:r=>[[r.W,'Çizgiye in, başını kaldır, ön direğe sert orta.'],[r.ST,'Ön direğe atak yap.'],[r.Wo,'Arka direğe gir.'],[r.AM,'Penaltı noktasında ol.'],[r.CM,'Ceza sahası yayında dönen topu bekle.']],
+ build:(s,r)=>{ s.give(r.CM);
+  s.step(`Kanada pas: ${N(r.W)}`); s.mv(r.W,82,62); s.pass(r.CM,r.W);
+  s.step(`${N(r.W)} çizgiye iner · üç bölge dolar`); s.drib(r.W,98,62); s.mv(r.ST,99,39); s.mv(r.Wo,99,28); s.mv(r.AM,93,35); s.mv(r.CM,84,40);
+  s.step(`Orta: ${N(r.ST)}`); s.cross(r.W,r.ST);
+  s.step('Kafa vuruşu: GOL!'); s.shot(r.ST); }},
+{id:'hatlar',ad:'Hatlar Arası Oyun (Yarım Alan)',kat:'Hücum',side:1,
+ re:/hatlar aras|yarım alan|10 numara (arada|boşta)|ara bölge|half.?space/,
+ amac:'Rakibin orta saha ve defans hattı arasındaki yarım alanda topu alıp dönerek forveti beslemek.',
+ ilke:['10 numara rakip 6’nın arkasında saklanır','Stoper dikine pası arar','Dönüşten sonra ilk pas ileri'],
+ gorev:r=>[[r.AM,'Yarım alanda boş kal, yarı dönük al, dönüp forvete pas ver.'],[r.CB,'Dikine pası hatlar arasına at.'],[r.ST,'Dönüş anında savunma arkasına koş.']],
+ build:(s,r)=>{ s.give(r.CB);
+  s.step(`${N(r.AM)} yarım alanda boşa çıkar`); s.mv(r.AM,66,45);
+  s.step(`Dikine pas hatlar arasına`); s.pass(r.CB,r.AM);
+  s.step(`${N(r.AM)} döner, ${N(r.ST)} derine koşar`); s.drib(r.AM,74,44); s.mv(r.ST,92,40);
+  s.step('Ara pası'); s.pass(r.AM,r.ST);
+  s.step('Bitiriş'); s.shot(r.ST); }},
+/* ===== SAVUNMA ===== */
+{id:'presonde',ad:'Önde Pres (Yüksek Pres)',kat:'Savunma',side:1,def:1,
+ re:/önde (pres|bas)|yüksek pres|ileri(de)? (pres|bas)|pres yap|baskı (yap|kur)|yukarıda bas/,
+ amac:'Rakip geriden kurarken tetikleyiciyle önde basıp kenarda topu kazanmak.',
+ ilke:['Tetikleyici: kaleciden stopere pas, kötü ilk dokunuş, geri pas','Forvet içeriden dışa kavisli koşar','6 numara ve 10 numara pas yollarını kapatır','Kenar çizgisi ekstra savunmacıdır'],
+ gorev:r=>[[r.ST,'Kaleci stopere pas verince içeriden dışa bas, stoperi kenara zorla.'],[r.W,'Stoper beke pas verince beke bas.'],[r.AM,'Rakip 6 numarayı tut.'],[r.CM,'İçeriyi kapat, ikinci topu al.'],[r.FB,'Rakip kanadın arkasını tut, öne çık.']],
+ build:(s,r,o)=>{ s.give(o.GK);
+  s.step('Rakip kaleci stopere: pres tetikleyicisi!'); s.pass(o.GK,o.CB); s.near(r.ST,o.CB,-3,-5); s.near(r.AM,o.DM,-2,0); s.near(r.W,o.FB,-6,-4);
+  s.step(`${N(r.ST)} içeriyi kapatır, stoperi kenara zorlar`); s.near(o.CB,o.CB,0,6); s.near(r.ST,o.CB,-2,-3); s.near(r.CM,o.CMo||o.DM,-2,-2);
+  s.step(`Stoper beke · ${N(r.W)} beke basar`); s.pass(o.CB,o.FB); s.near(r.W,o.FB,-1.5,-1.5); s.near(r.FB,o.W,-2,0); s.near(r.ST,o.CB,-2,2);
+  s.step('Kenarda top kazanıldı!'); s.steal(r.W);
+  s.step(`Hızlı bitiriş: ${N(r.ST)}`); s.mv(r.ST,94,36); s.pass(r.W,r.ST);
+  s.step('GOL!'); s.shot(r.ST); }},
+{id:'ortablok',ad:'Orta Blok (Kompakt Savunma)',kat:'Savunma',side:1,def:1,
+ re:/orta blok|kompakt|blok savunma|hatları (yakın|kapat)|alan savunma|4.?4.?2 savun/,
+ amac:'Orta sahada kompakt durup rakibi kenara yönlendirmek; hatlar arası 10–12 m.',
+ ilke:['Hatlar arası 10–12 m, oyuncular arası 8–10 m','Blok topun tarafına kayar','Ters bek stoperlerin yanına daralır','Forvetler 6 numaraya pas yolunu kapatır'],
+ gorev:r=>[[r.ST,'Rakip 6’ya pas yolunu kapat.'],[r.W,'Top kanada gelince beke bas.'],[r.FB,'Kanadın arkasını tut.'],[r.CB,'Hattı düz tut, aralar 8–10 m.'],[r.FBo,'Ters taraftaysan stoperlerin yanına daral.'],[r.DM,'Hatlar arasını kapat.']],
+ build:(s,r,o)=>{ s.give(o.CB);
+  s.step('Blok orta sahada: hatlar arası 10–12 m'); r.defs.forEach(p=>{const [u,v]=s.P(p); s.mv(p,34,34+(v-34)*.75);}); r.mids.forEach(p=>{const [u,v]=s.P(p); s.mv(p,46,34+(v-34)*.75);}); [r.W,r.Wo].forEach(p=>{if(p){const [u,v]=s.P(p); s.mv(p,47,34+(v-34)*.8);}}); s.mv(r.ST,58,34);
+  s.step('Rakip kenara oynar: blok topun tarafına kayar'); s.pass(o.CB,o.FB); r.all.forEach(p=>{if(p===r.W||p===r.FB) return; const [u,v]=s.P(p); s.mv(p,u,v+7);});
+  s.step(`${N(r.W)} ve ${N(r.FB)} ikili baskı: içeriyi kapat`); s.near(r.W,o.FB,-1.5,-2); s.near(r.FB,o.W,-2,-1);
+  s.step('Top kazanıldı'); s.steal(r.W); }},
+{id:'derinblok',ad:'Derin Blok (Skoru Koru)',kat:'Savunma',side:0,def:1,
+ re:/derin blok|geri çekil|otobüs|kapan(alım|ın)|skoru koru|savunma yap|geride bekle|kale(mizi)? koru/,
+ amac:'Ceza sahası önünde iki kompakt hatla boşluk vermemek, ortaları uzaklaştırmak.',
+ ilke:['İki hat: 4’lü savunma 6’lık–ceza sahası arası, orta saha önünde','Ortalara ilk dokunan biz oluruz','Uzaklaştırma geniş ve yüksek','Top çıkınca hat birlikte çıkar'],
+ gorev:r=>[[r.CB,'Ceza sahasında topa ilk sen dokun, geniş uzaklaştır.'],[r.DM,'Ceza sahası önünü kapat, şut açısı verme.'],[r.FB,'Kanat oyuncusuna yapış, ortayı engelle.'],[r.ST,'Uzaklaştırılan top için orta sahada kal.']],
+ build:(s,r,o)=>{ s.give(o.W);
+  s.step('İki kompakt hat ceza sahası önünde'); r.defs.forEach(p=>{const [u,v]=s.P(p); s.mv(p,13,34+(v-34)*.6);}); r.mids.concat([r.W,r.Wo].filter(Boolean)).forEach(p=>{const [u,v]=s.P(p); s.mv(p,25,34+(v-34)*.65);}); s.mv(r.ST,42,34);
+  s.step('Rakip orta yapar'); s.near(o.ST,r.CB,1,0); s.clear(8,36);
+  s.step(`${N(r.CB)} ilk dokunur: geniş uzaklaştır`); s.near(r.CB,r.CB,1,0); s.clear(40,60);
+  s.step('Hat birlikte çıkar'); r.defs.forEach(p=>{const [u,v]=s.P(p); s.mv(p,22,v);}); }},
+{id:'tuzak',ad:'Pres Tuzağı (Kenara Yönlendir)',kat:'Savunma',side:1,def:1,
+ re:/pres tuzağı|tuzak|kenara yönlendir|kenarda kazan|çizgiye (sık|yönlendir)/,
+ amac:'Rakibi kenar çizgisine yönlendirip üç oyuncuyla sıkıştırarak topu kazanmak.',
+ ilke:['İçeriyi kapat, kenarı aç','Tetikleyici: rakip bek topu sırtı dönük aldı','Kanat bastırır, 8 içeriyi, bek arkayı kapatır'],
+ gorev:r=>[[r.W,'Bek topu alınca bastır, içeriden yaklaş.'],[r.CM,'İçeriye pas yolunu kapat.'],[r.FB,'Rakip kanadın arkasını tut.'],[r.ST,'Geri pası kapat.']],
+ build:(s,r,o)=>{ s.give(o.CB);
+  s.step('İçeriyi kapat: rakip kenara oynamak zorunda'); s.near(r.ST,o.CB,-3,-4); s.near(r.AM,o.DM,-2,0);
+  s.step('Tetikleyici: bek topu aldı'); s.pass(o.CB,o.FB); s.near(r.W,o.FB,-2,-3); s.near(r.CM,o.FB,-5,-7); s.near(r.FB,o.W,-2,-1);
+  s.step('Tuzak kapandı: top kazanıldı'); s.near(r.W,o.FB,-.6,-.6); s.steal(r.W);
+  s.step(`Hızla forvete: ${N(r.ST)}`); s.mv(r.ST,s.P(r.ST)[0]+8,40); s.pass(r.W,r.ST); }},
+{id:'ofsayt',ad:'Ofsayt Çizgisi (Hattı Çıkar)',kat:'Savunma',side:0,def:1,
+ re:/ofsayt|hattı (çıkar|yükselt)|savunma (hattı|çizgisi) (çık|yüksel)/,
+ amac:'Topa baskı varken savunma hattını birlikte çıkarıp forveti ofsayta düşürmek.',
+ ilke:['Baskı yok = hat geri, baskı var = hat birlikte çık','Stoper hattı yönetir: “Çık!”','Hat düz, aralar 8–10 m'],
+ gorev:r=>[[r.CB,'Hattı yönet: baskı gelince “Çık!” de.'],[r.DM,'Topa baskı yap.'],[r.FB,'Hatla birlikte çık, geride kalma.'],[r.FBo,'Hatla birlikte çık.']],
+ build:(s,r,o)=>{ s.give(o.AM||o.CM);
+  s.step('Baskı yok: hat geri çekilir'); r.defs.forEach(p=>{const [u,v]=s.P(p); s.mv(p,u-5,v);}); s.near(o.ST,r.CB,-1,2);
+  s.step(`${N(r.DM)} topa baskı yapar: hat birlikte çıkar`); s.near(r.DM,o.AM||o.CM,-1.5,0); const lu=Math.max(...r.defs.map(p=>s.P(p)[0]))+7; r.defs.forEach(p=>{const [u,v]=s.P(p); s.mv(p,lu,v);});
+  s.step('Pas atıldığında forvet ofsaytta kaldı'); s.pass(o.AM||o.CM,o.ST); }},
+{id:'karsipres',ad:'Karşı Pres (Top Kaybında 5 Saniye)',kat:'Geçiş',side:0,def:0,
+ re:/karşı pres|gegen|top kayb|kaybedince|5 saniye|anında geri kazan/,
+ amac:'Top kaybedildiği anda en yakın 3 oyuncuyla 5 saniye içinde topu geri kazanmak.',
+ ilke:['Kaybettiğin an topa koş','En yakın 3 oyuncu: biri topa, ikisi pas yollarına','5 saniyede kazanamazsan dengeye dön'],
+ gorev:r=>[[r.CM,'Topu kaybettiysen hemen topa bas.'],[r.AM,'En yakın pas yolunu kapat.'],[r.DM,'İleri çık, ikinci topu al.']],
+ build:(s,r,o)=>{ s.give(r.CM);
+  s.step('Top kaybı!'); const t=o.CM||o.DM; if(t){ s.near(t,r.CM,1.5,0); s.steal(t);}
+  s.step('En yakın 3 oyuncu 5 saniye içinde baskı'); s.near(r.CM,t,-1.2,0); s.near(r.AM,t,2,-3); s.near(r.DM,t,-4,3);
+  s.step('Top geri kazanıldı'); s.steal(r.AM);
+  s.step(`Hemen ileri: ${N(r.ST)}`); s.mv(r.ST,s.P(r.ST)[0]+8,36); s.pass(r.AM,r.ST);
+  s.step('Bitiriş'); s.shot(r.ST); }},
+{id:'markaj',ad:'Tehlikeli Oyuncuyu Kapat (Adam Markajı)',kat:'Savunma',side:0,def:1,
+ re:/markaj|adam adama|kapat(ın)?|tut(un|alım)?|boş bırakma|yakın takip|bırakma/,
+ amac:'Rakibin en tehlikeli oyuncusunu bir oyuncumuzla her yerde yakından takip etmek.',
+ ilke:['Markajcı rakiple kale arasında durur','Topu alınca döndürme','Yardım savunması: en yakın oyuncu destek'],
+ gorev:(r,o,x)=>[[x.marker,`Rakip ${x.target?x.target.num:'?'} numarayı her yerde yakından takip et, topu alınca döndürme.`],[r.CM,'Markajcıya yardım et, ikinci adamı kapat.']],
+ build:(s,r,o,x)=>{ const t=x.target, m=x.marker; if(!t||!m) return;
+  s.give(o.CB||o.DM);
+  s.step(`${N(m)}, rakip ${Nd(t)} yapışır`); s.near(m,t,-1.6,0);
+  s.step(`Rakip ${N(t)} boşa çıkmaya çalışır, ${N(m)} bırakmaz`); const [tu,tv]=s.P(t); s.mv(t,tu-8,tv+(tv<34?8:-8)); s.near(m,t,-1.5,0);
+  s.step('Pas gelince önüne kır'); s.pass(o.CB||o.DM,t); s.near(m,t,-.6,-.4); s.steal(m); }},
+/* ===== DURAN TOP ===== */
+{id:'korner',ad:'Korner Organizasyonu',kat:'Duran top',side:1,
+ re:/korner|köşe vuruşu/,
+ amac:'Ön direk – penaltı noktası – arka direk koşularıyla kornerden gol.',
+ ilke:['Koşular geç başlar, hızlı biter','Ön direkte sert, kısa kafa','Arka direk her zaman dolu','İki oyuncu kontra atağa karşı geride'],
+ gorev:r=>[[r.W,'Korneri kullan: ön direğe sert, falsolu.'],[r.CB,'Ön direğe koş, kafayla arka direğe sektir.'],[r.CBo,'Arka direkte bitir.'],[r.ST,'Penaltı noktasına koş.'],[r.AM,'Ceza sahası dışında dönen topu bekle.'],[r.DM,'Geride kal: kontraya karşı.']],
+ build:(s,r)=>{ s.mv(r.W,104.4,67.4); s.give(r.W); s.mv(r.CB,88,42); s.mv(r.CBo,88,30); s.mv(r.ST,90,36); s.mv(r.AM,82,40); s.mv(r.DM,60,34); s.mv(r.FBo,58,20);
+  s.step('Koşular başlar: ön direk, penaltı noktası, arka direk'); s.mv(r.CB,99,40); s.mv(r.CBo,100,29); s.mv(r.ST,94,35);
+  s.step(`Ön direğe orta: ${N(r.CB)}`); s.cross(r.W,r.CB);
+  s.step(`Kafayla arka direğe: ${N(r.CBo)}`); s.pass(r.CB,r.CBo);
+  s.step('GOL!'); s.shot(r.CBo); }},
+{id:'frikik',ad:'Serbest Vuruş Organizasyonu',kat:'Duran top',side:1,
+ re:/serbest vuruş|frikik|faul atışı|duvar(ın)? (yanı|üstü)/,
+ amac:'Aldatma koşusu ve kısa pasla duvarın yanından şut açısı yaratmak.',
+ ilke:['Aldatma koşusu inandırıcı olsun','Kısa pas yavaş ve topa yakın','Bir oyuncu dönen top için kaleye koşar'],
+ gorev:r=>[[r.AM,'Topun başında dur, aldatma koşusundan sonra kısa pas ver.'],[r.CM,'Topun üzerinden koş (aldatma), sonra yana açıl ve vur.'],[r.ST,'Dönen top için kaleye koş.']],
+ build:(s,r)=>{ s.mv(r.AM,80,42); s.give(r.AM); s.mv(r.CM,78,44); s.mv(r.ST,92,26);
+  s.step(`${N(r.CM)} topun üzerinden koşar (aldatma)`); s.mv(r.CM,85,46);
+  s.step('Kısa pas yana'); s.pass(r.AM,r.CM);
+  s.step('Duvarın yanından şut · forvet dönen topa'); s.shot(r.CM); s.mv(r.ST,99,31); }}
+];
+const KAT_ORDER=['Hücum','Geçiş','Savunma','Duran top'];
+function coachRespond(text,ctx){
+ const t=' '+text.toLocaleLowerCase('tr-TR').replace(/[’`]/g,"'")+' ';
+ const T=/rakip (takım )?(için|adına)|mavi takım (için|olarak)/.test(t)?'B':'A';
+ let side=null;
+ if(/rakib(in)? sağ/.test(t)) side='L'; else if(/rakib(in)? sol/.test(t)) side='R';
+ else if(/(?<![a-zçğıöşü])sol/.test(t)) side='L'; else if(/(?<![a-zçğıöşü])sağ/.test(t)) side='R';
+ // kısa takip komutları
+ if(ctx.last&&/^ *(sol|sağ)( kanat(tan)?| taraftan| taraf)?[ .!]*$/.test(t.trim())) return runPlay(ctx.last.play,T,side,ctx,text,ctx.last.x);
+ if(/(ne biliyorsun|neler yapabil|taktik(ler)?i? (listele|göster)|yardım|menü)/.test(t)) return {kind:'help'};
+ if(ctx.last&&/(tekrar|yeniden) (oynat|göster)/.test(t)) return {kind:'replay'};
+ if(ctx.last&&/(oyunculara|whatsapp|gönder|paylaş)/.test(t)) return {kind:'share'};
+ // bilgi bankasından taktik seç
+ let best=null,bi=1e9;
+ for(const p of PLAYBOOK){ const m=t.match(p.re); if(m&&m.index<bi){best=p;bi=m.index;} }
+ if(best){
+  const x={};
+  if(best.id==='markaj'){
+   const ms=findMentions(t); const oT=T==='A'?'B':'A';
+   const tm=ms.find(m=>(m.team||oT)===oT)||ms[0];
+   const objs=cur().objects;
+   x.target=tm?objs.find(o=>o.type==='player'&&baseTeam(o.team)===(tm.team||oT)&&String(o.num)===String(tm.num)):null;
+   const mm=ms.find(m=>m!==tm&&(m.team||T)===T);
+   const R=assignRoles(objs,T,'R');
+   x.marker=mm?objs.find(o=>o.type==='player'&&baseTeam(o.team)===T&&String(o.num)===String(mm.num)):(R&&R.DM);
+   if(!x.target) return {kind:'text',text:'Kimi kapatacağımızı yazın. Örnek: “Mavi 10’u kapatalım, 6 numara onu tutsun.”'};
+  }
+  return runPlay(best,T,side,ctx,text,x);
+ }
+ // açık komutlar (kırmızı 9 sol çizgiye gider ...)
+ const r=parseTactic(text,cur().objects);
+ if(r.frames.length>1){
+  return {kind:'play',ad:'Senin taktiğin',kat:'Özel',frames:r.frames,warn:r.warn,
+   steps:r.frames.slice(0,-1).map(f=>f.desc.join(' · ')||f.cap),
+   note:{amac:text.trim(),gorev:[],ilke:[]},auto:false};
+ }
+ return {kind:'unknown',warn:r.warn};
+}
+function runPlay(play,T,side,ctx,text,x){
+ const auto=play.side&&!side; side=side||'R';
+ const objs=cur().objects;
+ const s=new TSim(objs,T,side,!play.def);
+ if(!s.r) return {kind:'text',text:`${TEAMNAME[T]} takım tahtada yok. Önce “Diziliş” ile takımı yerleştirin.`};
+ if(play.def&&!s.o&&play.id!=='markaj') return {kind:'text',text:'Bu savunma taktiği için rakip takım (mavi) da tahtada olmalı. Önce mavi takıma diziliş verin.'};
+ try{ play.build(s,s.r,s.o,x||{}); }catch(e){ return {kind:'text',text:'Bu taktiği bu dizilişle kuramadım: '+e.message}; }
+ const frames=s.done();
+ if(frames.length<2) return {kind:'text',text:'Bu taktik için gerekli oyuncular tahtada eksik.'};
+ const gor=(play.gorev(s.r,s.o,x||{})||[]).filter(g=>g[0]).map(([p,txt])=>{
+  const role=Object.keys(ROLE_TR).find(k=>s.r[k]===p)||''; return {num:p.num,name:p.name||'',rol:ROLE_TR[role]||'',txt};});
+ const sideTxt=play.side?(side==='L'?'sol kanat':'sağ kanat'):'';
+ ctx.last={play,side,x};
+ return {kind:'play',ad:play.ad+(sideTxt?` (${sideTxt})`:''),kat:play.kat,frames,steps:frames.slice(0,-1).map(f=>f.cap),
+  note:{amac:play.amac,gorev:gor,ilke:play.ilke},auto,sideTxt,team:T};
+}
+function tacticNote(res){
+ const L=[`⚽ *Maç Taktiği: ${res.ad}*`]; if(S.team) L.push(`👥 ${S.team}`);
+ L.push(`🎯 ${res.note.amac}`);
+ if(res.note.gorev.length){L.push('','*Görevler*'); res.note.gorev.forEach(g=>L.push(`• ${g.num}${g.name?' '+g.name:''}${g.rol?' ('+g.rol+')':''}: ${g.txt}`));}
+ if(res.steps&&res.steps.length){L.push('','*Adımlar*'); res.steps.forEach((s,i)=>L.push(`${i+1}) ${s}`));}
+ if(res.note.ilke.length){L.push('','*Unutma*'); res.note.ilke.forEach(i=>L.push(`• ${i}`));}
+ L.push('','Animasyonlu video ekte. 💪');
+ return L.join('\n');
+}
+/* ---------- Taktik Ver sohbet ekranı ---------- */
+const coachCtx={last:null,res:null,msgs:[]};
+function openCoach(){
+ if(playing) stopPlay();
+ const ex=['Rakibin sağ beki yavaş, sol kanattan bindirme yapalım','Önde pres yapalım','Kontra atak','Mavi 10’u kapatalım','Korner organizasyonu','Kırmızı 9 sol çizgiye gider, mavi 7 onunla gelir'];
+ openModal(`<div class="shead"><h3>${icon('bot')} Taktik Ver</h3><button class="pb" id="cC">Kapat</button></div>
+  <div class="chat" id="chat"></div>
+  <div class="chips2" id="cex">${ex.map(e=>`<button class="pb sm">${esc(e)}</button>`).join('')}</div>
+  <div class="cin"><textarea id="cT" rows="2" placeholder="Maçta ne yapmak istiyorsunuz? Yazın ya da 🎤 ile söyleyin…"></textarea>
+   <button class="btn hl fill" id="cMic" title="Konuş">${icon('mic')}</button><button class="btn hl fill" id="cSend" title="Gönder">${icon('send')}</button></div>`,m=>{
+  const chat=m.querySelector('#chat'), ta=m.querySelector('#cT');
+  const add=(who,html)=>{coachCtx.msgs.push({who,html}); render();};
+  const render=()=>{chat.innerHTML=coachCtx.msgs.map(x=>`<div class="msg ${x.who}">${x.html}</div>`).join(''); bind(); chat.scrollTop=chat.scrollHeight;};
+  const bind=()=>{
+   chat.querySelectorAll('[data-act]').forEach(b=>b.onclick=()=>act(b.dataset.act,b.dataset.v));
+  };
+  const act=(a,v)=>{
+   const res=coachCtx.res;
+   if(a==='watch'){closeModal(); fi=0; updateUI(); render2(); setTimeout(()=>play(false),300);}
+   else if(a==='side'){send(v);}
+   else if(a==='share'&&res){closeModal(); openTacticShare(res);}
+   else if(a==='text'&&res){openWhatsApp(tacticNote(res));}
+   else if(a==='ex'){ta.value=v; send();}
+  };
+  const render2=()=>render();
+  if(!coachCtx.msgs.length) add('bot',`Merhaba hocam! Maçta ne yapmak istediğinizi anlatın, tahtadaki dizilişe göre animasyonunu kurayım ve oyunculara gidecek notu hazırlayayım.<br><span class="muted">Örnek: “Rakibin sağ beki yavaş, sol kanattan bindirme yapalım.”</span>`);
+  else render();
+  function send(txt){
+   const q=(txt||ta.value).trim(); if(!q) return; ta.value='';
+   add('me',esc(q));
+   const res=coachRespond(q,coachCtx);
+   if(res.kind==='help'){
+    const g=KAT_ORDER.map(k=>`<b>${k}</b><br>${PLAYBOOK.filter(p=>p.kat===k).map(p=>`<button class="pb sm" data-act="ex" data-v="${esc(p.ad)}">${esc(p.ad)}</button>`).join(' ')}`).join('<br>');
+    add('bot',`Bilgi bankamdaki taktikler (birine dokunun):<br>${g}<br><span class="muted">Ayrıca “kırmızı 9 sol çizgiye gider, mavi 7 onunla gelir” gibi tek tek hareketleri de kurarım.</span>`); return;
+   }
+   if(res.kind==='replay'){act('watch'); return;}
+   if(res.kind==='share'){act('share'); return;}
+   if(res.kind==='text'){add('bot',esc(res.text)); return;}
+   if(res.kind==='unknown'){
+    add('bot',`Tam anlayamadım hocam. Şunlardan biri mi?<br>${['Kanat Bindirme','Önde Pres','Kontra Atak','Orta Blok','Taraf Değiştirme','Geriden Oyun Kurma'].map(x=>`<button class="pb sm" data-act="ex" data-v="${x}">${x}</button>`).join(' ')}<br><span class="muted">“yardım” yazarsanız bildiğim bütün taktikleri gösteririm.</span>${res.warn&&res.warn.length?'<br><span class="vtw">'+res.warn.map(esc).join('<br>')+'</span>':''}`); return;
+   }
+   // taktiği tahtaya uygula
+   beginChange();
+   frames=frames.slice(0,fi).concat(res.frames.map(f=>({objects:f.objects,drawings:f.drawings,cap:f.cap})));
+   fixUid(); afterChange();
+   coachCtx.res=res;
+   const g=res.note.gorev.map(x=>`<li><b>${esc(String(x.num))}${x.name?' '+esc(x.name):''}</b>${x.rol?' ('+esc(x.rol)+')':''}: ${esc(x.txt)}</li>`).join('');
+   add('bot',`<div class="ptitle">${esc(res.ad)} <span class="tag">${esc(res.kat)}</span></div>
+    <div>${esc(res.note.amac)}</div>
+    ${res.auto?`<div class="muted">Sağ kanadı seçtim. <button class="pb sm" data-act="side" data-v="sol">Sol kanattan yap</button></div>`:''}
+    <ol class="steps">${res.steps.map(s=>`<li>${esc(s)}</li>`).join('')}</ol>
+    ${g?`<div class="muted" style="margin-top:6px">Oyuncu görevleri:</div><ul class="gor">${g}</ul>`:''}
+    ${res.warn&&res.warn.length?'<div class="vtw">'+res.warn.map(esc).join('<br>')+'</div>':''}
+    <div class="row" style="margin-top:8px"><button class="pb pri sm" data-act="watch">▶ Tahtada izle</button><button class="pb sm wa2" data-act="share">Oyunculara gönder (video + yazı)</button><button class="pb sm" data-act="text">Sadece yazı</button></div>`);
+  }
+  m.querySelector('#cSend').onclick=()=>send();
+  ta.onkeydown=e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault(); send();}};
+  m.querySelectorAll('#cex button').forEach(b=>b.onclick=()=>{ta.value=b.textContent; send();});
+  m.querySelector('#cC').onclick=closeModal;
+  // ses
+  let rec=null;
+  m.querySelector('#cMic').onclick=async()=>{
+   const SP=speechPlugin();
+   if(SP){try{try{await SP.requestPermissions();}catch(_){} const r=await SP.start({language:'tr-TR',maxResults:1,prompt:'Taktiği anlatın',partialResults:false,popup:true}); const t=r&&r.matches&&r.matches[0]; if(t){ta.value=t; send();}}catch(e){toast('Ses tanınamadı: '+(e&&e.message||e));} return;}
+   const W=window.SpeechRecognition||window.webkitSpeechRecognition;
+   if(!W){toast('Bu cihazda sesle yazma yok, yazarak anlatabilirsiniz.');return;}
+   if(rec){try{rec.stop();}catch(_){} rec=null; return;}
+   rec=new W(); rec.lang='tr-TR'; rec.interimResults=false; rec.continuous=false;
+   const mb=m.querySelector('#cMic'); mb.style.background='#ff5a4f';
+   rec.onresult=e=>{const t=e.results[0][0].transcript; ta.value=t; send();};
+   rec.onend=()=>{mb.style.background=''; rec=null;}; rec.onerror=()=>{mb.style.background=''; rec=null;};
+   try{rec.start();}catch(e){mb.style.background=''; rec=null;}
+  };
+ },'sheet tall');
+}
+function openTacticShare(res){
+ computeView(); const view=[V.wx0,V.wy0,V.ww,V.wh]; const text=tacticNote(res);
+ openModal(`<div class="shead"><h3>Oyunculara gönder</h3><button class="pb" id="sC">Kapat</button></div>
+  <div class="prog" style="margin-top:0">Taktik: <b style="color:var(--tx)">${esc(res.ad)}</b> · ${res.steps.length} adım</div>
+  <label>Oyunculara gidecek yazı</label><textarea id="tN" rows="7">${esc(text)}</textarea>
+  ${voicePicker()}
+  <button class="bigb wa" id="mkV">${icon('wa')}Videoyu ve yazıyı WhatsApp’ta gönder</button><div id="vbox"></div>
+  <button class="bigb vid" id="waT" style="border-color:var(--line);height:44px;font-size:13px">Sadece yazıyı gönder</button>`,m=>{
+  m.querySelector('#sC').onclick=closeModal; bindVoicePicker(m);
+  m.querySelector('#waT').onclick=()=>openWhatsApp(m.querySelector('#tN').value);
+  m.querySelector('#mkV').onclick=()=>videoUI(m,[{label:res.ad,opts:{fr:clone(frames),view,title:res.ad,sub:S.team||'Maç taktiği',caps:true}}],m.querySelector('#tN').value,true);
+ });
+}
+
 /* ---------- Wire up ---------- */
 const cbox=$('#colors');
 COLORS.forEach(c=>{const s=document.createElement('div'); s.className='sw'; s.dataset.c=c; s.style.background=c; s.onclick=()=>{color=c; if(tool==='move'||tool==='eraser'||placing) setTool('arrow'); else updateUI();}; cbox.appendChild(s);});
@@ -2418,6 +2900,7 @@ $('#bEditDrill').onclick=editDrillOnBoard;
 $('#bShareDrill').onclick=()=>openShareDrill(curDrill);
 $('#bVideo').onclick=openBoardVideo;
 $('#bVoiceT').onclick=openVoiceTactic;
+$('#bCoach').onclick=openCoach;
 $('#sbarB').onclick=openSession;
 $('#dVoice').onclick=()=>{unlockSpeech(); S.voice=!S.voice; persist(); if(!S.voice) TTS.stop(); else if(!TTS.ok()) toast('Bu cihazda sesli okuma desteklenmiyor'); else if(!playing) TTS.speak(stepText(fi)||curDrill.ad); updateUI();};
 $('#dPlay').onclick=togglePlay;
