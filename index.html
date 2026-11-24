@@ -53,6 +53,11 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;displa
 #capOv:empty{display:none}
 #cine{position:fixed;inset:0;z-index:9999;background:#050c08;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:10px}
 #cine canvas{position:static;width:min(100%,calc((100vh - 90px)*16/9));height:auto;aspect-ratio:16/9;border-radius:12px;background:#000;box-shadow:0 10px 40px rgba(0,0,0,.6)}
+#vset{position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:12px}
+#vset .vbox{background:var(--bg2,#11201a);border:1px solid var(--line);border-radius:16px;padding:16px;width:min(520px,100%);max-height:90vh;overflow:auto;color:var(--tx)}
+#vset .vrow{display:flex;align-items:center;gap:8px;padding:8px;border-radius:10px;border:1px solid var(--line);margin-bottom:6px}
+#vset .vrow span{flex:1;font-size:14px}
+#vset .vrow.on{border-color:var(--acc)}
 #cine .cbar{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
 .chip{min-width:40px;height:34px;border-radius:9px;background:var(--panel2);border:1px solid var(--line);color:var(--tx);font:700 14px system-ui;flex:none;cursor:pointer;padding:0 10px}
 .chip.on{background:var(--acc);color:var(--accd);border-color:var(--acc)}
@@ -1212,7 +1217,7 @@ function buildDrill(d){
 }
 
 /* =================== STATE =================== */
-let S={colA:'#e53935',colB:'#1e88e5',colGKA:'#fdd835',colGKB:'#43a047',size:1,lw:3,names:true,field:'grass',view:'full',vrect:null,orient:'auto',ghost:true,speed:1,fmt:'11',fA:'11|4-4-2',fB:'11|4-3-3',voice:true,vvoice:'',session:[],team:'',where:''};
+let S={colA:'#e53935',colB:'#1e88e5',colGKA:'#fdd835',colGKB:'#43a047',size:1,lw:3,names:true,field:'grass',view:'full',vrect:null,orient:'auto',ghost:true,speed:1,fmt:'11',fA:'11|4-4-2',fB:'11|4-3-3',voice:true,vvoice:'',ttsName:'',ttsPitch:1.05,session:[],team:'',where:''};
 let frames=[{objects:[],drawings:[]}], fi=0, uid=1;
 let tool='move', color='#ffffff', placing=null, playing=false, playTok=0;
 let undoStack=[], redoStack=[];
@@ -1606,22 +1611,23 @@ function nativePlugin(name){
 const TTS={
  cap(){return nativePlugin('TextToSpeech');}, warned:false,
  ok(){return !!(this.cap()||('speechSynthesis' in window));},
- speak(text){
-  const c=this.cap();
-  if(c) return c.speak({text,lang:'tr-TR',rate:1.05,pitch:1.05,volume:1.0,category:'playback'}).catch(e=>{if(!this.warned){this.warned=true; voiceHelp(e);}});
+ speak(text,vname){
+  const c=this.cap(), tf=nativePlugin('TtsFile'), vn=vname!==undefined?vname:(S.ttsName||''), pt=S.ttsPitch||1.05;
+  if(tf) return tf.speak({text,lang:'tr-TR',rate:1.05,pitch:pt,voice:vn}).catch(()=>c?c.speak({text,lang:'tr-TR',rate:1.05,pitch:pt,volume:1.0,category:'playback'}):null).catch(e=>{if(!this.warned){this.warned=true; voiceHelp(e);}});
+  if(c) return c.speak({text,lang:'tr-TR',rate:1.05,pitch:pt,volume:1.0,category:'playback'}).catch(e=>{if(!this.warned){this.warned=true; voiceHelp(e);}});
   if(!('speechSynthesis' in window)) return Promise.resolve();
   return new Promise(res=>{
    let done=false; const fin=()=>{if(!done){done=true;res();}};
    try{
     speechSynthesis.cancel();
-    const u=new SpeechSynthesisUtterance(text); u.lang='tr-TR'; u.rate=1.05; u.pitch=1.05;
-    const tv=speechSynthesis.getVoices().filter(v=>/^tr/i.test(v.lang)); const sc=v=>(/natural|neural|enhanced|premium|online/i.test(v.name)?4:0)+(/google|yelda|emel|ahmet/i.test(v.name)?2:0)+(v.localService===false?1:0); tv.sort((a,b)=>sc(b)-sc(a)); if(tv[0]) u.voice=tv[0];
+    const u=new SpeechSynthesisUtterance(text); u.lang='tr-TR'; u.rate=1.05; u.pitch=pt;
+    const tv=speechSynthesis.getVoices().filter(v=>/^tr/i.test(v.lang)); const sc=v=>(/natural|neural|enhanced|premium|online/i.test(v.name)?4:0)+(/google|yelda|emel|ahmet/i.test(v.name)?2:0)+(v.localService===false?1:0); tv.sort((a,b)=>sc(b)-sc(a)); const pick=vn&&tv.find(v=>v.name===vn); if(pick||tv[0]) u.voice=pick||tv[0];
     u.onend=fin; u.onerror=fin; speechSynthesis.speak(u);
     setTimeout(fin,Math.min(20000,1500+text.length*90));
    }catch(e){fin();}
   });
  },
- stop(){const c=this.cap(); try{c&&c.stop();}catch(e){} try{window.speechSynthesis&&speechSynthesis.cancel();}catch(e){}}
+ stop(){const c=this.cap(), tf=nativePlugin('TtsFile'); try{c&&c.stop();}catch(e){} try{tf&&tf.stop().catch(()=>{});}catch(e){} try{window.speechSynthesis&&speechSynthesis.cancel();}catch(e){}}
 };
 try{window.speechSynthesis&&speechSynthesis.getVoices();}catch(e){}
 function voiceHelp(e){
@@ -1921,7 +1927,9 @@ function openSettings(){
  <div class="setrow">Oyuncu isimlerini göster<input type="checkbox" id="xN" ${S.names?'checked':''}></div>
  <label>Saha görünümü</label><div class="seg" id="xF">${fieldBtns.map(([k,l])=>`<button data-k="${k}" class="${S.field===k?'on':''}">${l}</button>`).join('')}</div>
  <label>Yön</label><div class="seg" id="xO">${[['auto','Otomatik'],['h','Yatay'],['v','Dikey']].map(([k,l])=>`<button data-k="${k}" class="${S.orient===k?'on':''}">${l}</button>`).join('')}</div>
+ <label>Sesli anlatım</label><button class="pb" id="xV" style="width:100%">🎙 Anlatıcı sesini seç (erkek / kadın, ton)</button>
  <div class="row end"><button class="pb pri" id="xC">Tamam</button></div>`,m=>{
+  m.querySelector('#xV').onclick=()=>openVoiceSettings();
   const upd=()=>{computeView(); persist(); updateUI(); render();};
   [['xA','colA'],['xB','colB'],['xGA','colGKA'],['xGB','colGKB']].forEach(([id,k])=>m.querySelector('#'+id).oninput=e=>{S[k]=e.target.value;upd();});
   m.querySelector('#xS').oninput=e=>{S.size=+e.target.value;upd();};
@@ -1974,7 +1982,7 @@ const canAutoVoice=()=>!!nativePlugin('TtsFile');
 const canMic=()=>!!(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia);
 async function synthClip(ac,text){
  const P=nativePlugin('TtsFile'); if(!P) throw new Error('Otomatik ses yalnızca telefondaki uygulamada (APK) çalışır');
- const r=await P.synthesize({text,lang:'tr-TR',rate:1.05});
+ const r=await P.synthesize({text,lang:'tr-TR',rate:1.05,pitch:S.ttsPitch||1.05,voice:S.ttsName||''});
  const bin=atob(r.data), buf=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) buf[i]=bin.charCodeAt(i);
  return await new Promise((res,rej)=>ac.decodeAudioData(buf.buffer,res,rej));
 }
@@ -2137,13 +2145,14 @@ function voicePicker(){
   <button data-v="none" class="${def==='none'?'on':''}">Sessiz (yazılı)</button>
   <button data-v="auto" class="${def==='auto'?'on':''}" ${auto?'':'disabled style="opacity:.4"'}>Otomatik ses</button>
   <button data-v="mic" class="${def==='mic'?'on':''}" ${mic?'':'disabled style="opacity:.4"'}>Kendi sesim</button></div>
-  <p class="muted" id="vnote" style="margin:6px 0 0"></p>`;
+  <p class="muted" id="vnote" style="margin:6px 0 0"></p><button class="pb sm" type="button" id="vsB" style="margin-top:6px">🎙 Anlatıcı sesini seç (erkek / kadın)</button>`;
 }
 function bindVoicePicker(m){
  const notes={none:'Adımlar videoda yazı olarak görünür.',auto:'Telefonun Türkçe sesi her adımı okur ve ses videoya kaydedilir.',mic:'Animasyon ekranda oynarken siz anlatırsınız, sesiniz videoya kaydedilir. Sessiz bir yerde kaydedin.'};
  const set=v=>{S.vvoice=v; persist(); m.querySelectorAll('#vsel button').forEach(b=>b.classList.toggle('on',b.dataset.v===v)); m.querySelector('#vnote').textContent=notes[v]+(!canAutoVoice()?' (Otomatik ses yalnızca telefondaki uygulamada çalışır.)':'');};
  m.querySelectorAll('#vsel button').forEach(b=>b.onclick=()=>{if(!b.disabled) set(b.dataset.v);});
  set(m.querySelector('#vsel button.on').dataset.v);
+ const vb=m.querySelector('#vsB'); if(vb) vb.onclick=()=>openVoiceSettings();
 }
 function videoUI(m,jobs,text,autoShare){
  const box=m.querySelector('#vbox'), btn=m.querySelector('#mkV'), voice=(m.querySelector('#vsel button.on')||{dataset:{v:'none'}}).dataset.v;
@@ -3305,11 +3314,47 @@ function openCoach(){
  },'sheet tall');
 }
 /* ---------- Video gibi izle: kesintisiz animasyon + motive eden sesli anlatım ---------- */
+/* ---------- Anlatıcı sesi seçimi (erkek / kadın, ton) ---------- */
+async function listTrVoices(){
+ const tf=nativePlugin('TtsFile');
+ if(tf){ try{ const r=await tf.listVoices(); return (r.voices||[]).map(v=>({id:v.name,net:v.network,inst:v.installed!==false,feat:v.features||''})); }catch(e){} }
+ if(!('speechSynthesis' in window)) return [];
+ let vs=speechSynthesis.getVoices(); if(!vs.length){ await new Promise(r=>setTimeout(r,600)); vs=speechSynthesis.getVoices(); }
+ return vs.filter(v=>/^tr/i.test(v.lang)).map(v=>({id:v.name,net:v.localService===false,inst:true,feat:''}));
+}
+function voiceGender(v){const t=(v.id+' '+v.feat).toLowerCase(); if(/(^|[^e])male|erkek|cem|ahmet|tolga|emre/.test(t)) return 'Erkek'; if(/female|kadın|yelda|emel|seda|filiz/.test(t)) return 'Kadın'; return '';}
+const TEST_LINE='Beyler, toplanın! Bugün sahaya çıkıyoruz ve bu maçı alıyoruz. Hadi!';
+async function openVoiceSettings(){
+ const ov=document.createElement('div'); ov.id='vset';
+ ov.innerHTML=`<div class="vbox"><div class="shead"><h3>🎙 Anlatıcı sesi</h3><button class="pb" data-x>Kapat</button></div>
+  <p class="muted" style="margin:0 0 8px">Telefondaki Türkçe sesler aşağıda. Her birini <b>▶ Dinle</b> ile deneyin, beğendiğinizi <b>Seç</b>in. Erkek sesi listede yoksa “Kalın ton” ile sesi kalınlaştırabilirsiniz.</p>
+  <div id="vlist" class="muted">Sesler yükleniyor…</div>
+  <label style="margin-top:10px;display:block">Ses tonu</label><div class="seg" id="vpitch">
+   <button data-p="1.05">Normal</button><button data-p="0.85">Kalın</button><button data-p="0.7">Çok kalın</button></div>
+  <p class="muted" id="vinfo" style="margin-top:10px"></p></div>`;
+ document.body.appendChild(ov);
+ const close=()=>{TTS.stop(); ov.remove();};
+ ov.querySelector('[data-x]').onclick=close; ov.onclick=e=>{if(e.target===ov) close();};
+ const pb=ov.querySelectorAll('#vpitch button');
+ const markP=()=>pb.forEach(b=>b.classList.toggle('on',Math.abs(+b.dataset.p-(S.ttsPitch||1.05))<.01)); markP();
+ pb.forEach(b=>b.onclick=()=>{S.ttsPitch=+b.dataset.p; persist(); markP(); TTS.speak(TEST_LINE);});
+ const vs=await listTrVoices(), box=ov.querySelector('#vlist');
+ const native=!!nativePlugin('TtsFile');
+ if(!vs.length){box.innerHTML='Bu cihazda seçilebilir Türkçe ses bulunamadı. Varsayılan ses ve aşağıdaki ton ayarı kullanılacak.';}
+ else{
+  const rows=[{id:'',label:'Telefonun varsayılan sesi'}].concat(vs.map((v,i)=>{const g=voiceGender(v); return {...v,label:`Ses ${i+1}${g?' · '+g:''}${v.net?' · internetle':''}${!v.inst?' · indirilmemiş':''}`};}));
+  const draw=()=>{box.innerHTML=rows.map((r,i)=>`<div class="vrow${(S.ttsName||'')===r.id?' on':''}"><span>${esc(r.label)}${(S.ttsName||'')===r.id?' <b style="color:var(--acc)">✓</b>':''}</span><button class="pb sm" data-l="${i}">▶ Dinle</button><button class="pb sm pri" data-s="${i}">Seç</button></div>`).join('');
+   box.querySelectorAll('[data-l]').forEach(b=>b.onclick=()=>{const r=rows[+b.dataset.l]; TTS.speak(TEST_LINE,r.id);});
+   box.querySelectorAll('[data-s]').forEach(b=>b.onclick=()=>{const r=rows[+b.dataset.s]; S.ttsName=r.id; persist(); draw(); TTS.speak('Tamam hocam, bu sesle anlatacağım!');});};
+  draw();
+ }
+ ov.querySelector('#vinfo').innerHTML=native?'Daha fazla ses için: Ayarlar → Genel yönetim → Dil → Metin okuma çıkışı → Google Konuşma Hizmetleri → ⚙ → Ses verilerini yükle → Türkçe. Orada erkek sesleri de indirebilirsiniz.':(IOS?'iPhone’da daha fazla ses için: Ayarlar → Erişilebilirlik → Seslendirilen İçerik → Sesler → Türkçe.':'');
+}
 function openCinema(o){
  if(playing) stopPlay(); TTS.stop(); unlockSpeech();
  const W=1280,H=720, n=o.fr.length-1, sc=narrationScript(o.title,o.desc,frameCaps(o.fr),o.kind||'tactic');
  const ov=document.createElement('div'); ov.id='cine';
- ov.innerHTML=`<canvas width="${W}" height="${H}"></canvas><div class="cbar"><button class="pb" data-c="re">⟲ Baştan</button><button class="pb" data-c="mu"></button>${o.onShare?'<button class="pb wa2" data-c="sh">Oyunculara gönder</button>':''}<button class="pb" data-c="ed">Tahtada düzenle</button><button class="pb pri" data-c="x">Kapat</button></div>`;
+ ov.innerHTML=`<canvas width="${W}" height="${H}"></canvas><div class="cbar"><button class="pb" data-c="re">⟲ Baştan</button><button class="pb" data-c="mu"></button><button class="pb" data-c="vs">🎙 Ses seç</button>${o.onShare?'<button class="pb wa2" data-c="sh">Oyunculara gönder</button>':''}<button class="pb" data-c="ed">Tahtada düzenle</button><button class="pb pri" data-c="x">Kapat</button></div>`;
  document.body.appendChild(ov);
  const cv=ov.querySelector('canvas'), c2=cv.getContext('2d');
  let st={k:'intro',t0:performance.now()}, tok=0, alive=true, muted=!S.voice;
@@ -3344,6 +3389,7 @@ function openCinema(o){
  ov.querySelector('[data-c=re]').onclick=()=>run();
  mb.onclick=()=>{muted=!muted; if(muted) TTS.stop(); else {S.voice=true; persist();} mlab();};
  ov.querySelector('[data-c=x]').onclick=close;
+ ov.querySelector('[data-c=vs]').onclick=()=>{tok++; TTS.stop(); openVoiceSettings();};
  ov.querySelector('[data-c=ed]').onclick=()=>{close(); fi=0; updateUI(); render();};
  const sh=ov.querySelector('[data-c=sh]'); if(sh) sh.onclick=()=>{close(); o.onShare();};
  cv.onclick=()=>run();
