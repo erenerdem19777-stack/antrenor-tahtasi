@@ -300,7 +300,7 @@ body.m-home #capOv,body.m-lib #capOv{display:none!important}
   <button class="btn hl dr" id="bShareDrill" data-i="share"><span class="hide-p">Paylaş</span></button>
   <button class="btn hl fill dr" id="bEditDrill" data-i="pen"><span class="hide-p">Tahtada düzenle</span></button>
   <button class="btn bo" id="b3d" title="3B / 2B görünüm"><b id="b3dT">3B</b></button>
-  <button class="btn bo" id="bCam" title="Kamera açısı">🎥 <span id="bCamT" class="hide-p">Orta</span></button>
+  <button class="btn bo" id="bCam" title="Kamera açısı">🎥 <span id="bCamT" class="hide-p">TV Yayını</span></button>
   <button class="btn" id="bFull" title="Tam ekran" data-i="full"></button>
  </header>
  <div id="main">
@@ -372,7 +372,7 @@ body.m-home #capOv,body.m-lib #capOv{display:none!important}
    <button class="mcard" id="goLib">
     <svg viewBox="0 0 260 92"><rect x="1" y="1" width="258" height="90" rx="8" fill="#1f3a5c"/><g fill="none" stroke="#fff" stroke-opacity=".5" stroke-width="1.5"><rect x="70" y="14" width="120" height="64" stroke-dasharray="4 4"/></g><g fill="#ff8a00"><path d="M70 8l5 9h-10z"/><path d="M190 8l5 9h-10z"/><path d="M70 72l5 9h-10z"/><path d="M190 72l5 9h-10z"/></g><g stroke="#fff" stroke-width="1.5"><circle cx="70" cy="46" r="6" fill="#e53935"/><circle cx="130" cy="14" r="6" fill="#e53935"/><circle cx="190" cy="46" r="6" fill="#e53935"/><circle cx="130" cy="78" r="6" fill="#e53935"/><circle cx="128" cy="44" r="6" fill="#1e88e5"/></g><path d="M77 42l46-24" stroke="#fff" stroke-width="2.5"/><text x="18" y="50" fill="#3ddc84" font-size="13" font-weight="800" font-family="system-ui">U8</text><text x="208" y="50" fill="#3ddc84" font-size="13" font-weight="800" font-family="system-ui">A</text></svg>
     <b>Antrenman Kütüphanesi</b>
-    <span>İspanya, Arjantin ve Fransa okullarından 75 animasyonlu antrenman: rondo, pozisyon oyunu, 1’e 1, pres, geçiş, bitiriş… Gelişim alanına ve yaşa göre seçin.</span>
+    <span>Altyapı Akademisi dahil animasyonlu çalışmalar: rondo, pozisyon oyunu, 1’e 1, pres, geçiş, bitiriş… Gelişim alanına ve yaşa göre seçin.</span>
     <span class="go">Antrenmanları gör →</span>
    </button>
   </div>
@@ -4724,6 +4724,7 @@ const AGES=[
 const SQ=(x,y,w,h,p='c')=>[[p+'1','cone',x,y],[p+'2','cone',x+w,y],[p+'3','cone',x,y+h],[p+'4','cone',x+w,y+h]];
 const VW=(x,y,w,h,m=3)=>[x-m,y-m,w+2*m,h+2*m];
 const THEMES=[
+ {k:'altyapi',ad:'Altyapı Akademisi',ikon:'🎓',ulke:'Almanya · Hollanda · FIFA Training Centre',odak:'Baskı altında karar, geçiş, hücumda savunma dengesi, süpürücü kaleci',not:'Federasyon ve akademi kaynaklarından uyarlanan çalışmalar. Her çalışmanın kaynak bağlantısı ayrıntı ekranında.'},
  {k:'rondo',ad:'Rondo ve Top Saklama',ikon:'🔄',ulke:'İspanya',odak:'Baskı altında pas, açı yaratma, tek–iki dokunuş, top kaybında anında baskı',not:'İspanya ve Barcelona okulunun temel taşı. Her antrenmanın ilk 15 dakikası. Kural: ortaya giren kaybeden olur; ara pas (iki savunmacının arasından) ekstra puan.'},
  {k:'pozisyon',ad:'Pozisyon Oyunları',ikon:'🧩',ulke:'İspanya',odak:'Juego de posición: üstünlük yaratma, üçüncü adam, hatlar arası, genişlik–derinlik',not:'Guardiola ve İspanya millî takımlarının oyun modeli. Oyuncular bölgelerini korur; amaç topu boş adama ulaştırmak ve oyunu ilerletmek.'},
  {k:'birebir',ad:'1’e 1 ve Çalım',ikon:'⚡',ulke:'Fransa · Arjantin',odak:'Cesaret, hız değişimi, aldatma, vücut kullanımı, 1’e 1 savunma',not:'Fransa’nın Clairefontaine akademisinde ve Arjantin’in “potrero” (sokak futbolu) kültüründe 1’e 1 her gün çalışılır. Kaybetmekten korkmayın; deneme sayısını artırın.'},
@@ -5673,7 +5674,87 @@ const DRILLS=[
   {t:'Kanatlar koşuya başlar',m:{w1:[84,6],w2:[80,62]}},
   {t:'3 saniyede: uzun pas kanada',m:{b:'w2',w2:[72,62]}},
   {t:'Kontra başladı',m:{w2:[62,58]}}],
- end:'3 saniyede doğru dağıtım 1 puan.'}
+ end:'3 saniyede doğru dağıtım 1 puan.'},
+{tema:'altyapi',ulke:'Almanya · DFB',yas:['U8','U14'],ad:'3’e 3: Sahayı Temizle, Hücum Hakkını Al',tur:'Oyun · Geçiş',sure:'12 dk',alan:'26×20 m + 4 m geçiş bölgesi',oyuncu:'6 saha oyuncusu + 1 kaleci',
+ kaynak:['DFB Trainingdialog · 3 gegen 3 mit wechselndem Angriffsrecht','https://assets.dfb.de/uploads/000/290/661/original_DFB_TRAININGSDIALOG.pdf?1694671026='],
+ amac:'Topu kazandıktan sonra başı kaldırıp güvenli çıkışı bulmak, ardından aynı kaleye hücum etmek.',
+ kurulum:'Tek büyük kaleyi kullan. Karşı uçtaki son 4 metreyi geçiş bölgesi olarak işaretle. Hücum hakkı olan takım kaleye gider. Savunma topu kazanır ve bölgeye kontrollü sürer ya da oradaki arkadaşına pas verirse hücum hakkını alır.',
+ anahtar:['Topu kazanır kazanmaz pas açısı aç','Topa en yakın eski hücumcu baskı yapsın, diğerleri geçiş bölgesinin yolunu kapatsın','Bölgeye ulaşınca yön değiştirirken üç oyuncu farklı hatlar tutsun'],
+ varyasyon:'3×3 dakika oyna ve turlar arasında 1 dakika ayır. Çıkış zorlaşırsa bölgeyi genişlet.',
+ view:VW(75,24,30,20),
+ o:[...SQ(75,24,30,20),['z1','cone',79,24],['z2','cone',79,44],['g','GKB',103,34,1],['a1','A',91,31,7],['a2','A',92,38,9],['a3','A',85,34,6],['d1','B',94,33,4],['d2','B',90,37,8],['d3','B',83,30,11],['b','ball','a1']],
+ s:[{t:'Mavi 4 araya girip topu kazanır.',m:{d1:[92,33],b:'d1'}},{t:'Mavi 8 destek verir. 11 geçiş bölgesine açılır.',m:{d2:[87,37],d3:[77,28],a1:[90,32],b:'d2'}},{t:'11 bölge içinde pası kontrol eder. Hücum hakkı maviye geçer.',m:{b:'d3',a2:[87,38]}},{t:'11 içeri sürer, 8 derinliğe koşar.',m:{d3:[86,28],d2:[92,37],d1:[89,33],a3:[89,31]}},{t:'8 pası alıp aynı kaleye bitirir.',m:{b:'d2',g:[103,36]}},{t:'Şut sonrası yeni topla roller değişir.',m:{b:[104.8,32]}}],
+ end:'Top kazanmak tek başına hücum hakkı vermez. Önce geçiş bölgesine kontrollü ulaş.'},
+{tema:'altyapi',ulke:'Hollanda · KNVB Rinus',yas:['U10','U14'],ad:'2’ye 2’den 4’e 4’e: Takviye Gelince Karar Ver',tur:'Oyun · Geçiş',sure:'14 dk',alan:'30×24 m',oyuncu:'8 saha oyuncusu',
+ kaynak:['KNVB Rinus · 2 tegen 2 omschakelen naar 4 tegen 4','https://rinus.knvb.nl/nl/infopage/informatie/de-training/trainingstip-van-de-week/2-tegen-2-omschakelen-naar-4-tegen-4'],
+ amac:'2’ye 2’de rakibi geçme fırsatını tanımak ve oyun büyüdüğünde ilk pası veya markajı yeniden seçmek.',
+ kurulum:'İki mini kale kur. Her takım iki oyuncuyla başlar, iki oyuncusu yan çizgide hazır bekler. İlk top el değiştirdiğinde dört bekleyen oyuncu içeri girer. Oyun durana kadar 4’e 4 devam eder. Her tekrar başlangıç ikililerini değiştir.',
+ anahtar:['2’ye 2’de destek oyuncusu rakibin arkasına saklanmasın','İçeri giren iki oyuncu aynı topa koşmasın, biri genişlik biri derinlik versin','Topu kaybeden takım önce kendi kalesine giden doğrudan yolu kapatsın'],
+ varyasyon:'Küçük gruplarda geçiş anını sözlü işaretle. U14’te oyuncular topun el değiştirmesini kendileri okusun.',
+ view:VW(37,22,30,24,5),
+ o:[...SQ(37,22,30,24),['g1','goal',37,34,180],['g2','goal',67,34,0],['a1','A',48,31,7],['a2','A',50,38,9],['a3','A',47,20,6],['a4','A',48,48,11],['d1','B',53,31,4],['d2','B',55,37,5],['d3','B',59,20,8],['d4','B',59,48,10],['b','ball','a1']],
+ s:[{t:'Kırmızı 7 rakibini geçmeyi dener, 9 çapraz destek verir.',m:{a1:[51,31],a2:[53,39],d1:[52,32]}},{t:'Mavi 4 topu kapar. İki takımdan ikişer oyuncu oyuna girer.',m:{b:'d1',a3:[49,26],a4:[47,42],d3:[55,27],d4:[55,42]}},{t:'Mavi 4 baskı gelince genişteki 8’i bulur.',m:{b:'d3',a1:[51,29],a3:[50,28],d2:[50,38]}},{t:'8 çapraz pasla derinlik koşusu yapan 5’i bulur.',m:{d2:[43,37],b:'d2',a4:[44,40]}},{t:'5 mini kaleye bitirir.',m:{b:[37,34]}}],
+ end:'Her tekrarda aynı sekiz oyuncu farklı başlangıç ve takviye rolleri alsın.'},
+{tema:'altyapi',ulke:'Almanya · Dortmund U17',yas:['U14','A'],ad:'Hücumda 2+1 Sigorta: Kontrayı Başlamadan Kes',tur:'Oyun · Savunma dengesi',sure:'16 dk',alan:'50×38 m',oyuncu:'6’ya 6 + 1 kaleci',
+ kaynak:['FIFA Training Centre · BVB U17 II antrenman yöntemi','https://www.fifatrainingcentre.com/en/practice/elite-sessions/clubs-and-academies/german-academies/training-methods-for-the-playing-style-of-the-bvb-u17-ii.php'],
+ amac:'Takım rakip ceza sahasına yaklaşırken iki stoper ve 6 numaranın kontraya karşı yerleşimini çalışmak.',
+ kurulum:'Bir uçta kalecili büyük kale, karşı uçta iki mini kale. Kırmızı büyük kaleye hücum eder, mavi topu kazanınca iki mini kaleden birine gider. Kırmızıda iki stoper ve 6 numara topun arkasında bağlantıyı korur.',
+ anahtar:['6 numara top kanada giderken rakibin merkezdeki çıkış pasını gölgeye al','Stoperler aynı hizada donmasın: topa yakın olan yaklaşır, diğeri derinliği korur','Pas hattı açıksa saldır, top kontrolü rakipteyse oyunu yavaşlat ve merkeze dön'],
+ varyasyon:'4×3 dakika uygula. Daha sonra hücumun her yön değiştirmesinde 6 ve iki stoperin kaymasını değerlendir.',
+ view:VW(55,15,50,38),
+ o:[...SQ(55,15,50,38),['m1','goal',55,22,180],['m2','goal',55,46,180],['g','GKB',103.5,34,1],['a1','A',70,28,4],['a2','A',68,41,5],['a3','A',78,34,6],['a4','A',92,46,7],['a5','A',94,34,9],['a6','A',89,22,11],['d1','B',94,42,3],['d2','B',97,35,4],['d3','B',94,26,5],['d4','B',83,36,8],['d5','B',73,41,9],['d6','B',76,24,11],['b','ball','a6']],
+ s:[{t:'Top sağ kanada dönerken 6 ve stoperler top tarafına kayar.',m:{b:'a4',a1:[71,31],a2:[71,44],a3:[79,39]}},{t:'Mavi 3 içeri çevrilen topu keser. Mavi 9 kontra için koşar.',m:{b:'d1',d1:[93,43],d5:[70,47],a4:[92,44]}},{t:'Yakındaki kanat baskıya döner. 6, merkezdeki mavi 8’in önünü alır.',m:{a4:[92,42],a3:[81,38],d4:[83,37],a1:[68,34],a2:[73,44]}},{t:'Mavi merkeze oynamayı dener; 6 pası keser.',m:{b:'a3',a3:[84,38]}},{t:'6 stoper desteğine oynar; takım ikinci hücumu kurar.',m:{b:'a2',a4:[91,49],a6:[91,20]}}],
+ end:'6 numarayı top kaybından önceki konumuna göre değerlendir.'},
+{tema:'altyapi',ulke:'FIFA Talent Coach Programme',yas:['U12','A'],ad:'6 Numara: Tara, Yarım Dön veya Geri Oyna',tur:'Teknik · Baskı altında alma',sure:'12 dk',alan:'22×16 m',oyuncu:'3 pasör + 1 aktif presçi',
+ kaynak:['FIFA Training Centre · Midfielders receiving on the half-turn','https://www.fifatrainingcentre.com/en/practice/talent-coach-programme/build-and-progress/passing-circuit-midfielders-receiving-on-the-half-turn.php'],
+ amac:'6 numaranın omuz kontrolünden aldığı bilgiyle dönme veya güvenli geri pas kararı vermesi.',
+ kurulum:'Stoper, 6 ve ileri hedef oyuncusunu üç farklı hatta yerleştir. Presçi 6’nın kör tarafında başlar. Her tekrarda presçi yaklaşabilir ya da hedef pas hattını kapatabilir. Avantaj varsa 6 döner, baskı yakınsa geri oynar.',
+ anahtar:['Top stoperdeyken ve pas yol alırken omuz üstü kontrol et','Alan açıksa yarım açık dur ve uzak ayağınla ilk dokunuşu boşluğa al','Rakip sırtına bindiyse tek pasla geri dön, hemen yeni pas açısı ver'],
+ varyasyon:'Önce yarı aktif baskı. Sonra presçi topu kazanırsa başlangıç çizgisinden sürerek puan alır.',
+ view:VW(40,26,22,16),
+ o:[...SQ(40,26,22,16),['cb','A',41,34,4],['mid','A',50,35,6],['tar','A',61,32,8],['pr','B',55,38,10],['b','ball','cb']],
+ s:[{t:'Presçi uzakta. 6 omuz üstünden ileri pası kontrol eder.',m:{mid:[49,34],pr:[56,39]}},{t:'6 yarım dönerek alır, ilk dokunuşu boşluğa taşır.',m:{b:'mid',mid:[51,33]}},{t:'Açık hattı görüp 8’e oynar.',m:{b:'tar'}},{t:'Yeni tekrar. Bu kez presçi 6’nın sırtına yaklaşır.',m:{b:'cb',mid:[50,35],pr:[51.5,36]}},{t:'6 baskıyı fark eder ve stoperden gelen topu alır.',m:{b:'mid'}},{t:'6 tekte geri oynar ve yeniden pas açısı verir.',m:{b:'cb',mid:[49,30]}}],
+ end:'Doğru karar her zaman dönmek değildir. Presçinin mesafesi ve ileri pas hattı belirler.'},
+{tema:'altyapi',ulke:'FIFA Talent Coach Programme',yas:['U14','A'],ad:'Merkezde 3’e 2, Kanatta Anında 1’e 1',tur:'Ana bölüm · Grup savunması',sure:'15 dk',alan:'35×30 m, iki dış koridor',oyuncu:'3 hücumcu + 2 savunmacı + 2 kanat oyuncusu + kaleci',
+ kaynak:['FIFA Training Centre · Developing defensive coordination in small groups','https://www.fifatrainingcentre.com/en/practice/talent-coach-programme/zonal-defending/developing-defensive-coordination-in-small-groups.php'],
+ amac:'İki savunmacıyla merkezi geciktirmek ve yeni top kanada çıkar çıkmaz bire bir savunmaya geçmek.',
+ kurulum:'Merkezde 3’e 2 büyük kaleye hücum oynanır. İlk top şutla veya top kaybıyla biter. Antrenör ikinci topu iki yan koridordan birindeki kanat oyuncusuna verir. Yakın savunmacı koridorda 1’e 1’e çıkar. Kanat mini kaleye gider.',
+ anahtar:['Merkezde biri öne basarken diğeri iç pası ve derinliği savunsun','İkinci topa uzun ilk adımlarla yaklaş, sonra frenle ve iç koridoru kapat','Kanat oyuncusu ilk dokunuşunu savunmacının geliş yönüne göre seçsin'],
+ varyasyon:'Önce ikinci topun yönünü bildir. Sonra iki tarafa da canlı besle. Her iki aksiyondan sonra savunmacıları değiştir.',
+ view:VW(70,19,35,30),
+ o:[...SQ(70,19,35,30),['c5','cone',70,27],['c6','cone',105,27],['c7','cone',70,41],['c8','cone',105,41],['m1','goal',103,23,0],['m2','goal',103,45,0],['g','GKB',103.5,34,1],['a1','A',81,30,7],['a2','A',79,34,10],['a3','A',82,39,9],['d1','B',88,31,4],['d2','B',90,37,5],['w1','A',86,23,11],['w2','A',84,45,17],['co','N',71,22,'K'],['b','ball','a2'],['b2','ball','co']],
+ s:[{t:'Mavi 4 topa yaklaşır, 5 merkezde derinliği korur.',m:{d1:[84,33],d2:[89,36],a3:[87,39]}},{t:'Kırmızı 10, 9’u bulur. 5 şut açısını daraltır.',m:{b:'a3',d2:[91,38],g:[103,36]}},{t:'İlk atak şutla biter. Savunmacılar ikinci topa hazır.',m:{b:[105,35]}},{t:'Yeni top soldaki kanada. Yakın savunmacı 4 koridora çıkar.',m:{b2:'w1',d1:[89,25],w1:[88,23]}},{t:'4 frenleyip içi kapatır. Kanat çizgiden mini kaleye gider.',m:{d1:[94,24.5],w1:[95,21.5]}},{t:'İkinci aksiyon mini kaleye şutla tamamlanır.',m:{b2:[103,23]}}],
+ end:'Her tekrarda ikinci topun yönünü değiştir ve yakın savunmacının tepkisini izle.'},
+{tema:'altyapi',ulke:'FIFA Training Centre',yas:['U14','A'],ad:'Süpürücü Kaleci: Çık mı, Kal mı?',tur:'Oyun · Kaleci kararı',sure:'15 dk',alan:'48×36 m',oyuncu:'5’e 5 + 2 kaleci',
+ kaynak:['FIFA Training Centre · Defending the goal or the space','https://www.fifatrainingcentre.com/en/practice/elite-sessions/goalkeeper/defending_the_goal_or_the_space.php'],
+ amac:'Savunma çizgisi arkasına atılan pasta kalecinin öne çıkma veya kalede kalma kararını geliştirmek.',
+ kurulum:'48×36 m alanda iki kalecili 5’e 5 oynat. Her iki uçta kalecili kale kur; soldaki kaleyi şemada huni çifti işaretler. Olağan oyun kuralları geçerli. Topu kazanan takım rakip savunma hattının arkasına pas fırsatı arar. İki örneği göster: kalecinin önce varacağı uzun pas ve forvetin önce varacağı kısa pas.',
+ anahtar:['Top baskı altındayken ve baskısızken başlangıç konumunu ayarla','Pasın hızına ve forvetin koşusuna göre kimin önce varacağını değerlendir','Çıkış kararı verdikten sonra stoperlere seslen. Kalırsan şut açısını küçült'],
+ varyasyon:'İlk turda her iki pası da antrenör başlatsın. Sonra topun yönü ve pas uzunluğu serbest olsun.',
+ view:VW(57,16,48,36),
+ o:[...SQ(57,16,48,36),['l1','cone',57,30.34],['l2','cone',57,37.66],['ga','GKA',59,34,1],['gb','GKB',101.5,34,1],['a1','A',65,27,4],['a2','A',67,40,5],['a3','A',74,34,6],['a4','A',79,43,7],['a5','A',82,30,9],['d1','B',86,28,4],['d2','B',87,40,5],['d3','B',77,31,6],['d4','B',79,23,7],['d5','B',77,42,9],['b','ball','a3']],
+ s:[{t:'6, 9’un koşusuna doğru savunma arkasına uzun gönderir.',m:{b:[96.5,32],a5:[88,31],d1:[90,29],gb:[97.5,33]}},{t:'Kaleci önce varır ve topu güvene alır.',m:{gb:[96.5,32],b:'gb',a5:[91,31]}},{t:'Yeni tekrar. Top tekrar 6’da, kaleci başlangıç yerinde.',m:{gb:[101.5,34],b:'a3',a5:[82,30],d1:[86,28]}},{t:'Bu kez pas kısa: 9 önce varır. Kaleci açıyı daraltır.',m:{b:'a5',a5:[90,32],d1:[89,29],gb:[100,33]}},{t:'9 şuta giderken kaleci dengeli kalır.',m:{a5:[94,32],gb:[101,33]}},{t:'Kaleci şut çizgisine gelir, topu yana çeler.',m:{gb:[102,32],b:[103,28]}}],
+ end:'Aynı bölgede iki farklı pas uzunluğu, iki farklı kaleci kararı.'},
+{tema:'altyapi',ulke:'FIFA Training Centre · Uyarlama',yas:['U12','A'],ad:'Çevre Kontrolü: İki Çıkış, Tek Doğru Karar',tur:'Teknik · Algı ve dönüş',sure:'14 dk',alan:'22×18 m, iki hedef kapısı',oyuncu:'1 pasör + 1 alıcı + 1 presçi + 2 hedef',
+ kaynak:['FIFA Training Centre · Karl Aksum on scanning','https://www.fifatrainingcentre.com/en/environment/science-explained/high-performance/play/karl-aksum-scanning.php'],
+ amac:'6 numaranın pas gelmeden presçinin yerini görmesi, açık çıkışı seçmesi ve ilk dokunuşu o yöne atması.',
+ kurulum:'Pasör arkada, alıcı merkezde, iki hedef çapraz ileride. Presçi pasör hazırlanırken alıcının sağ ya da sol omzuna yaklaşır. Serbest taraftan hedefe kontrollü ilerleme bir puan. Presçi dönüşü tamamen kapatırsa geri pas da doğru karar sayılır.',
+ anahtar:['Pasör başını kaldırırken omuz üstünden rakibi ve hedefleri gör','Top yaklaşırken baskı değiştiyse ilk planını güncelle','İlk dokunuşu rakipten uzağa ve sonraki pasın hattına al','10 tekrarda bilgi toplama, doğru seçim ve başarılı ilk dokunuşu ayrı ayrı kaydet'],
+ varyasyon:'Önce yönü değiştirmeyen canlı presçi. İkinci turda presçi top yoldayken yön değiştirebilir. Son turda seçimi 4’e 4 + 2 hedef oyununda gözle.',
+ view:VW(41,25,22,18,5),
+ o:[...SQ(41,25,22,18),['p1','cone',59,25],['p2','cone',59,29],['p3','cone',59,39],['p4','cone',59,43],['cb','A',42,34,4],['mid','A',51,34,6],['l','A',62,27,8],['r','A',62,41,10],['d','B',54,35,5],['b','ball','cb']],
+ s:[{t:'6 top gelmeden omuz kontrolü yapar. Pres sağ omuzdan yaklaşıyor.',m:{d:[52,36]},head:{mid:-.95},face:{mid:-1.57}},{t:'6 sola açılır ve ilk dokunuşunu baskıdan uzağa alır.',m:{mid:[52,31],b:'mid'},head:{mid:0},face:{mid:2.25}},{t:'Sol kapıdan 8’e oynar.',m:{b:'l'}},{t:'Yeni tekrar. Presçi bu kez sol omuza yaklaşır.',m:{mid:[51,34],d:[52,32],b:'cb'},head:{mid:.95},face:{mid:-1.57}},{t:'6 sağa açılır, karşı ayağıyla boşluğa alır.',m:{mid:[52,37],b:'mid'},head:{mid:0},face:{mid:.85}},{t:'Sağ kapıdan 10’a oynar.',m:{b:'r'}}],
+ end:'Doğru tarafa dönme sayısını 10 tekrarda takip et.'},
+{tema:'altyapi',ulke:'FIFA Talent Coach Programme · Uyarlama',yas:['U12','A'],ad:'1’e 1: Güçlü Ayağı Kapat, Zayıf Ayağa Yönlendir',tur:'Ana bölüm · Bire bir savunma',sure:'14 dk',alan:'22×20 m, iki kanal + kale',oyuncu:'1 hücumcu + 1 savunmacı + 1 pasör + 1 kaleci',
+ kaynak:['FIFA Training Centre · Defending in 1v1: Orientating attackers away from goal','https://www.fifatrainingcentre.com/en/practice/talent-coach-programme/deny-and-protect/defending-in-1v1-orientating-attackers-away-from-goal.php'],
+ amac:'Savunmacının koşu açısı ve yan duruşuyla hücumcunun güçlü ayağını kapatıp zayıf ayağına ve güvenli koridora yönlendirmesi.',
+ kurulum:'Kaleye 20 m mesafede pasör hücumcuyu besler. Sert huni çizgisi yerine iki çıkış koridoru belirle. Sağ ayaklı ile sol ayaklı hücumcuyu sırayla kullan. Savunmacı güçlü ayağın tarafına açılı yaklaşır. Hücumcu serbestçe çalım veya şut dener.',
+ anahtar:['Pas yoldayken mesafeyi kapat, son adımlarda frenle','Dizleri bük, yan dur ve ayakları çaprazlamadan eşlik et','Zayıf ayak yönü kalenin merkezi veya boş pas koridoruysa önce tehlikeli hattı koru','10 tekrarda zorlanan yönü, merkeze girişleri ve temiz top kazanmayı say'],
+ varyasyon:'Önce güçlü ayak bilgisi ver. Sonra savunmacı ilk dokunuştan okumaya çalışsın. İleri seviyede 2’ye 2 oynat; takım arkadaşının kapattığı alanı da hesaba kat.',
+ view:VW(83,24,22,20,4),
+ o:[...SQ(83,24,22,20),['p','N',84,34,'P'],['a','A',89,34,7],['d','B',97,34,2],['g','GKB',104,34,1],['b','ball','p']],
+ s:[{t:'Sağ ayaklı hücumcu topu alırken bek sağ yolu kapatacak açıyla gelir.',m:{b:'a',d:[92,35.6]},face:{d:-1.95}},{t:'Bek frenler ve sağ içi kapalı tutar. Hücumcu sola, zayıf ayağına sürer.',m:{a:[92,30],d:[94,32]},face:{d:-2.35}},{t:'Savunmacı kaleyle top arasında kalır, geniş köşeye eşlik eder.',m:{a:[96,27],d:[98,29]}},{t:'Yeni tekrar: sol ayaklı hücumcu. Savunmacı bu defa sol yolu kapatır.',m:{a:[89,34],d:[96,34],b:'p'}},{t:'Pas sırasında açı değişir, savunmacı bu kez sol taraftan yaklaşır.',m:{b:'a',d:[92,32.4]},face:{d:-.95}},{t:'Hücumcu sağa sürer. Savunmacı içeri dönüş yoluna basar.',m:{a:[94,39],d:[96,37]},face:{d:-.8}}],
+ end:'Yönü dayatırken merkezden kaleye giden hattı açık bırakma.'}
 ];
 DRILLS.forEach(d=>{d.age=d.yas[0];});
 DRILLS.forEach((d,i)=>d.id=i);
@@ -5718,6 +5799,8 @@ function buildDrill(d){
    const h=holderOf(prev.objects,pb); if(!h) return; const hn=byId.get(h.id);
    if(hn.x!==h.x||hn.y!==h.y){const b=byId.get(pb.id); b.x=hn.x+(pb.x-h.x); b.y=hn.y+(pb.y-h.y);}
   });
+  for(const [k,angle] of Object.entries(st.face||{})) byId.get(key[k]).facing=angle;
+  for(const [k,angle] of Object.entries(st.head||{})) byId.get(key[k]).headTurn=angle;
   prev.drawings=autoArrows(prev.objects,nx); prev.cap=st.t;
   fr.push({objects:nx,drawings:[],cap:''});
  });
@@ -6154,12 +6237,28 @@ function realInit(){
  RL.gm={PX,X0,Y0,GW,GH};
  const grass=document.createElement('canvas'); grass.width=GW*PX; grass.height=GH*PX; const g=grass.getContext('2d');
  RL.grassC=grass;
- const nStr=14;
- g.fillStyle='#2f7d32'; g.fillRect(0,0,grass.width,grass.height);
- for(let i=-1;i<nStr+1;i++){ g.fillStyle=i%2?'#3a8f3c':'#2f7f33'; g.fillRect((-X0+i*FL/nStr)*PX,0,FL/nStr*PX+1,grass.height); }
+ const nStr=16;
+ g.fillStyle='#275934'; g.fillRect(0,0,grass.width,grass.height);
+ for(let i=-1;i<nStr+1;i++){
+  const x=(-X0+i*FL/nStr)*PX, w=FL/nStr*PX+1;
+  const band=g.createLinearGradient(x,0,x+w,0);
+  band.addColorStop(0,i%2?'#427c3f':'#346935');
+  band.addColorStop(1,i%2?'#3e773c':'#396f37');
+  g.fillStyle=band; g.fillRect(x,0,w,grass.height);
+ }
  const img=g.getImageData(0,0,grass.width,grass.height), d=img.data;
- for(let i=0;i<d.length;i+=4){ const n=(Math.random()-.5)*22, m=(Math.random()<.02)?-18:0; d[i]+=n*.5+m; d[i+1]+=n+m; d[i+2]+=n*.4+m; }
+ for(let y=0;y<grass.height;y++){
+  for(let x=0;x<grass.width;x++){
+   const i=(y*grass.width+x)*4;
+   const n=(Math.random()-.5)*23+Math.sin(x*.48+y*.031)*2.4+Math.sin(x*.045)*Math.cos(y*.05)*3;
+   d[i]+=n*.62; d[i+1]+=n; d[i+2]+=n*.55;
+  }
+ }
  g.putImageData(img,0,0);
+ const light=g.createRadialGradient(grass.width*.52,grass.height*.43,0,grass.width*.52,grass.height*.43,grass.width*.7);
+ light.addColorStop(0,'rgba(235,255,186,.13)');
+ light.addColorStop(1,'rgba(8,28,19,.19)');
+ g.fillStyle=light; g.fillRect(0,0,grass.width,grass.height);
  g.save(); g.translate(-X0*PX,-Y0*PX); g.scale(PX,PX);
  g.strokeStyle='rgba(255,255,255,.92)'; g.fillStyle='rgba(255,255,255,.92)'; g.lineWidth=.12;
  const st=f=>{g.beginPath(); f(); g.stroke();};
@@ -6181,7 +6280,7 @@ function realInit(){
  const apron=new T.Mesh(new T.PlaneGeometry(FL+70,FW+70),new T.MeshLambertMaterial({color:'#23552a'}));
  apron.rotation.x=-Math.PI/2; apron.position.set(FL/2,-.02,FW/2); sc.add(apron);
  // reklam panoları
- const adT=cvTex(2048,128,(c,w,h)=>{const ads=[['ANTRENÖR TAHTASI','#0e2a1a','#3ddc84'],['by SERKAN İNAL','#111','#fff'],['TAKTİK VER','#3ddc84','#04140b'],['75 ANTRENMAN','#1e3a8a','#fff'],['FUTBOL AKADEMİ','#b91c1c','#fff']];
+ const adT=cvTex(2048,128,(c,w,h)=>{const ads=[['ANTRENÖR TAHTASI','#0e2a1a','#3ddc84'],['by SERKAN İNAL','#111','#fff'],['TAKTİK VER','#3ddc84','#04140b'],[DRILLS.length+' ANTRENMAN','#1e3a8a','#fff'],['FUTBOL AKADEMİ','#b91c1c','#fff']];
   const n=8, bw=w/n; for(let i=0;i<n;i++){const [t,bg,fg]=ads[i%ads.length]; c.fillStyle=bg; c.fillRect(i*bw,0,bw,h); c.fillStyle=fg; c.font='900 58px system-ui,sans-serif'; c.textAlign='center'; c.textBaseline='middle'; c.fillText(t,i*bw+bw/2,h/2+2,bw-20);}},[1,1]);
  const adM=new T.MeshBasicMaterial({map:adT});
  const board=(x,z,len,rot)=>{const t=adT.clone(); t.needsUpdate=true; t.wrapS=T.RepeatWrapping; t.repeat.set(len/60,1); const m=new T.Mesh(new T.BoxGeometry(len,.9,.15),new T.MeshBasicMaterial({map:t})); m.position.set(x,.45,z); m.rotation.y=rot; sc.add(m);};
@@ -6205,7 +6304,7 @@ function realInit(){
  RL.bigGoals=[]; [[0,-1],[FL,1]].forEach(([gx,dir])=>{const gg=goalMesh(7.32,2.44,2.0); gg.position.set(gx,0,FW/2); gg.rotation.y=dir<0?Math.PI/2:-Math.PI/2; sc.add(gg); RL.bigGoals.push(gg);});
  // paylaşılan geometri ve malzemeler
  RL.geo={
-  thigh:new T.CapsuleGeometry(.13,.34,4,8), shin:new T.CapsuleGeometry(.1,.34,4,8), boot:new T.BoxGeometry(.16,.1,.3),
+  thigh:new T.CapsuleGeometry(.13,.34,4,8), shin:new T.CapsuleGeometry(.1,.34,4,8), boot:new T.SphereGeometry(1,12,8),
   torso:new T.CylinderGeometry(.29,.22,.62,14), shorts:new T.CylinderGeometry(.24,.25,.26,14), arm:new T.CapsuleGeometry(.08,.42,4,8),
   head:new T.SphereGeometry(.15,16,12), hair:new T.SphereGeometry(.158,16,8,0,Math.PI*2,0,Math.PI*.5), neck:new T.CylinderGeometry(.06,.06,.1,8),
   shadow:new T.PlaneGeometry(1,1), ball:new T.SphereGeometry(.11,24,16), cone:new T.ConeGeometry(.16,.32,20,1,true), coneBase:new T.CylinderGeometry(.2,.2,.02,20),
@@ -6214,9 +6313,35 @@ function realInit(){
  const sh=cvTex(64,64,(c,w,h)=>{const gr=c.createRadialGradient(32,32,2,32,32,30); gr.addColorStop(0,'rgba(0,0,0,.55)'); gr.addColorStop(1,'rgba(0,0,0,0)'); c.fillStyle=gr; c.fillRect(0,0,w,h);});
  RL.mat={skin:new T.MeshStandardMaterial({color:'#d9a57c',roughness:.8}), hair:new T.MeshStandardMaterial({color:'#2b1b10',roughness:.9}), boot:new T.MeshStandardMaterial({color:'#111',roughness:.5}),
   shadow:new T.MeshBasicMaterial({map:sh,transparent:true,depthWrite:false}),
-  ball:new T.MeshStandardMaterial({map:cvTex(256,128,(c,w,h)=>{c.fillStyle='#fafafa'; c.fillRect(0,0,w,h); c.fillStyle='#151515'; for(let i=0;i<12;i++){const x=(i%6)*w/6+(i>5?w/12:0), y=i>5?h*.7:h*.3; c.beginPath(); for(let k=0;k<5;k++){const an=k*Math.PI*2/5-Math.PI/2; c.lineTo(x+Math.cos(an)*14,y+Math.sin(an)*14);} c.fill();}}),roughness:.35}),
+  ball:new T.MeshStandardMaterial({map:cvTex(512,256,(c,w,h)=>{
+   c.fillStyle='#f6f4eb'; c.fillRect(0,0,w,h);
+   for(let row=-1;row<5;row++){
+    for(let col=-1;col<8;col++){
+     const x=(col+(row%2)*.5)*w/7, y=row*h/4;
+     const panel=(radius,offset)=>{
+      c.beginPath();
+      for(let i=0;i<6;i++){
+       const a=i*Math.PI/3+offset;
+       c.lineTo(x+Math.cos(a)*radius,y+Math.sin(a)*radius);
+      }
+      c.closePath();
+     };
+     panel(41,0); c.strokeStyle='#b9bfc2'; c.lineWidth=1.7; c.stroke();
+     if((row+col)%2===0){
+      panel(24,.17); c.fillStyle='#182642'; c.fill();
+      c.save(); c.clip();
+      c.strokeStyle='#f27c33'; c.lineWidth=9; c.beginPath();
+      c.moveTo(x-28,y+17); c.lineTo(x+29,y-19); c.stroke();
+      c.restore();
+     }
+    }
+   }
+  }),roughness:.42}),
   cone:new T.MeshStandardMaterial({color:'#ff7a00',roughness:.6,side:T.DoubleSide}), pole:new T.MeshStandardMaterial({map:cvTex(16,128,(c,w,h)=>{for(let i=0;i<8;i++){c.fillStyle=i%2?'#e53935':'#ffd400'; c.fillRect(0,i*16,w,16);}}),roughness:.5}),
   dummy:new T.MeshStandardMaterial({color:'#8e24aa',roughness:.6})};
+ RL.mat.profiles=['#e0ab82','#a97050','#7c4c36','#bf8760','#edbc95'].map(color=>new T.MeshStandardMaterial({color,roughness:.83}));
+ RL.mat.hairStyles=['#201815','#34231c','#503623'].map(color=>new T.MeshStandardMaterial({color,roughness:.92}));
+ RL.mat.brightBoot=new T.MeshStandardMaterial({color:'#e1bf46',roughness:.54});
  RL.kit=new Map(); RL.badge=new Map(); RL.pool=new Map(); RL.anim=new WeakMap(); RL.objRoot=new T.Group(); sc.add(RL.objRoot);
 }
 function goalMesh(w,h,dep){
@@ -6234,7 +6359,13 @@ function goalMesh(w,h,dep){
 function kitMats(team){
  if(RL.kit.has(team)) return RL.kit.get(team);
  const T=THREE, c=teamColor(team), gk=team.startsWith('GK');
- const m={shirt:new T.MeshStandardMaterial({color:c,roughness:.65}), shorts:new T.MeshStandardMaterial({color:gk?'#1d1d1d':shade(c,-.45),roughness:.7}), socks:new T.MeshStandardMaterial({color:gk?shade(c,-.2):'#f1f1f1',roughness:.7})};
+ const fabric=cvTex(128,96,(g,w,h)=>{
+  g.fillStyle=c; g.fillRect(0,0,w,h);
+  for(let x=0;x<w;x+=8){g.fillStyle=x%16?'rgba(0,0,0,.06)':'rgba(255,255,255,.11)'; g.fillRect(x,0,2,h);}
+  g.fillStyle=shade(c,-.35); g.fillRect(0,0,w,8);
+  g.fillStyle='rgba(255,255,255,.5)'; g.fillRect(0,h-7,w,2);
+ });
+ const m={shirt:new T.MeshStandardMaterial({map:fabric,roughness:.82}), sleeve:new T.MeshStandardMaterial({color:c,roughness:.82}), shorts:new T.MeshStandardMaterial({color:gk?'#1d1d1d':shade(c,-.45),roughness:.7}), socks:new T.MeshStandardMaterial({color:gk?shade(c,-.2):'#f1f1f1',roughness:.7})};
  RL.kit.set(team,m); return m;
 }
 function badgeMat(team,num){
@@ -6248,23 +6379,44 @@ function nameSprite(txt){
  const t=cvTex(256,64,(g,w,h)=>{g.font='800 36px system-ui,sans-serif'; g.textAlign='center'; g.textBaseline='middle'; g.lineWidth=7; g.strokeStyle='rgba(0,0,0,.8)'; g.strokeText(txt,128,34,248); g.fillStyle='#fff'; g.fillText(txt,128,34,248);});
  const m=new THREE.SpriteMaterial({map:t,depthTest:false,depthWrite:false}); RL.badge.set(k,m); return m;
 }
-function makePlayer(team){
+function makePlayer(team,variant){
  const T=THREE, G=RL.geo, M=RL.mat, K=kitMats(team), p=new T.Group();
- const leg=(s)=>{const hip=new T.Group(); hip.position.set(s*.13,.86,0); const th=new T.Mesh(G.thigh,K.shorts); th.position.y=-.2; hip.add(th);
-  const knee=new T.Group(); knee.position.y=-.42; hip.add(knee); const sn=new T.Mesh(G.shin,K.socks); sn.position.y=-.2; knee.add(sn);
-  const bt=new T.Mesh(G.boot,M.boot); bt.position.set(0,-.42,.05); knee.add(bt); p.add(hip); return {hip,knee};};
+ const skin=M.profiles[variant%M.profiles.length];
+ const hair=M.hairStyles[variant%M.hairStyles.length];
+ const part=(root,geo,mat,pos,scale)=>{
+  const mesh=new T.Mesh(geo,mat);
+  mesh.position.set(...pos); mesh.scale.set(...scale);
+  root.add(mesh); return mesh;
+ };
+ const leg=side=>{
+  const hip=new T.Group(); hip.position.set(side*.133,.90,0); p.add(hip);
+  part(hip,G.thigh,K.shorts,[0,-.14,0],[.95,.68,.94]);
+  const knee=new T.Group(); knee.position.y=-.40; hip.add(knee);
+  part(knee,G.shin,skin,[0,-.055,0],[.86,.44,.9]);
+  part(knee,G.shin,K.socks,[0,-.23,0],[.82,.63,.85]);
+  part(knee,G.boot,variant%3===0?M.brightBoot:M.boot,[0,-.445,.055],[.084,.052,.158]);
+  return {hip,knee};
+ };
  const L=leg(-1), R=leg(1);
- const sh=new T.Mesh(G.shorts,K.shorts); sh.position.y=.9; p.add(sh);
- const to=new T.Mesh(G.torso,K.shirt); to.position.y=1.3; p.add(to);
- const arm=(s)=>{const sp=new T.Group(); sp.position.set(s*.36,1.55,0); const a=new T.Mesh(G.arm,K.shirt); a.position.y=-.24; sp.add(a); p.add(sp); return sp;};
+ part(p,G.shorts,K.shorts,[0,.96,0],[1.02,.9,.68]);
+ part(p,G.torso,K.shirt,[0,1.30,0],[.92,.94,.62]);
+ const arm=side=>{
+  const shoulder=new T.Group(); shoulder.position.set(side*.265,1.51,0); p.add(shoulder);
+  part(shoulder,G.arm,K.sleeve,[0,-.055,0],[1.16,.32,1.18]);
+  part(shoulder,G.arm,skin,[0,-.225,.006],[.77,.60,.85]);
+  part(shoulder,G.head,skin,[0,-.385,.028],[.39,.55,.37]);
+  return shoulder;
+ };
  const AL=arm(-1), AR=arm(1);
- const nk=new T.Mesh(G.neck,M.skin); nk.position.y=1.65; p.add(nk);
- const hd=new T.Mesh(G.head,M.skin); hd.position.y=1.8; p.add(hd);
- const hr=new T.Mesh(G.hair,M.hair); hr.position.y=1.82; p.add(hr);
+ part(p,G.neck,skin,[0,1.60,0],[.95,1.05,1]);
+ const head=new T.Group(); head.position.y=1.735; p.add(head);
+ part(head,G.head,skin,[0,0,0],[.745,.94,.82]);
+ part(head,G.head,skin,[0,-.019,.111],[.17,.21,.20]);
+ if(variant%5!==4) part(head,G.hair,hair,[0,.02,-.013],[.73,variant%3===0?.98:.79,.83]);
  const shd=new T.Mesh(G.shadow,M.shadow); shd.rotation.x=-Math.PI/2; shd.position.y=.02; shd.scale.set(1.1,1.1,1); p.add(shd);
  const bd=new T.Sprite(badgeMat(team,'')); bd.position.y=2.4; bd.scale.set(.82,.82,1); bd.renderOrder=5; p.add(bd);
  const nmS=new T.Sprite(nameSprite('')); nmS.position.y=-.25; nmS.scale.set(1.6,.4,1); nmS.renderOrder=5; nmS.visible=false; p.add(nmS);
- p.userData={L,R,AL,AR,bd,nmS,team};
+ p.userData={L,R,AL,AR,bd,nmS,team,head};
  return p;
 }
 function makeThing(o){
@@ -6282,10 +6434,16 @@ function fitCamera(cam,W,H){
  const T=THREE, vert=V.vertical, res=V.res||0;
  const x0=V.wx0,x1=V.wx0+V.ww,y0=V.wy0,y1=V.wy0+V.wh, cx=(x0+x1)/2, cy=(y0+y1)/2;
  const small=baseWW()<60;
- const E=CAMS[camKey()].e*Math.PI/180;
- if(RL.stands){RL.stands.S.visible=vert; RL.stands.W.visible=!vert;}
- cam.aspect=W/H; cam.fov=small?44:38; cam.updateProjectionMatrix();
- const dir=vert?new T.Vector3(-Math.cos(E),Math.sin(E),0):new T.Vector3(0,Math.sin(E),Math.cos(E));
+ const preset=CAMS[camKey()];
+ const E=preset.e*Math.PI/180;
+ const yaw=(preset.yaw??(vert?90:0))*Math.PI/180;
+ const dir=new T.Vector3(-Math.sin(yaw)*Math.cos(E),Math.sin(E),Math.cos(yaw)*Math.cos(E));
+ if(RL.stands){
+  RL.stands.S.visible=dir.z<.18;
+  RL.stands.W.visible=dir.x>-.18;
+ }
+ cam.clearViewOffset();
+ cam.aspect=W/H; cam.fov=preset.fov??(small?44:38); cam.updateProjectionMatrix();
  const tgt=new T.Vector3(cx,0,cy);
  const corners=[[x0,0,y0],[x1,0,y0],[x0,0,y1],[x1,0,y1],[x0,2.3,y0],[x1,2.3,y0],[cx,2.6,vert?cy:y0]];
  const yb=1-2*(res/H)-0.02;
@@ -6313,7 +6471,7 @@ function syncObjects(objs,canvasKey){
  const used=new Map();
  objs.forEach((o,i)=>{
   const key=(o.type==='player'?'P'+o.team:o.type)+':'+(used.get(o.type+o.team)||0); used.set(o.type+o.team,(used.get(o.type+o.team)||0)+1);
-  let m=RL.pool.get(key); if(!m){m=o.type==='player'?makePlayer(o.team):makeThing(o); RL.pool.set(key,m); root.add(m);}
+  let m=RL.pool.get(key); if(!m){m=o.type==='player'?makePlayer(o.team,i):makeThing(o); RL.pool.set(key,m); root.add(m);}
   m.visible=true; m.position.set(o.x,0,o.y);
   const a=o._a??1;
   if(o.type==='player'){
@@ -6327,7 +6485,8 @@ function syncObjects(objs,canvasKey){
    if(dd>0.004&&dd<6){A.ph+=dd*2.4; A.amp=Math.min(1,A.amp+dd*1.5); const th=Math.atan2(dx,dy); let df=th-A.hd; while(df>Math.PI) df-=2*Math.PI; while(df<-Math.PI) df+=2*Math.PI; A.hd+=df*.35;}
    else { A.amp*=.8; if(ball&&A.amp<.15){const th=Math.atan2(ball.x-o.x,ball.y-o.y); let df=th-A.hd; while(df>Math.PI) df-=2*Math.PI; while(df<-Math.PI) df+=2*Math.PI; A.hd+=df*.15;} }
    A.x=o.x; A.y=o.y;
-   m.rotation.y=A.hd;
+   m.rotation.y=o.facing??A.hd;
+   u.head.rotation.y=o.headTurn??0;
    const sw=Math.sin(A.ph)*.75*A.amp;
    u.L.hip.rotation.x=sw; u.R.hip.rotation.x=-sw; u.L.knee.rotation.x=Math.max(0,-sw)*1.1; u.R.knee.rotation.x=Math.max(0,sw)*1.1;
    u.AL.rotation.x=-sw*.8; u.AR.rotation.x=sw*.8; u.AL.rotation.z=.12; u.AR.rotation.z=-.12;
@@ -6335,7 +6494,7 @@ function syncObjects(objs,canvasKey){
   } else if(o.type==='goal'){
    const an=(o.ang||0)*Math.PI/180; m.rotation.y=Math.PI/2-an; m.scale.set(1,1,1); m.position.set(o.x+Math.cos(an)*.5,0,o.y+Math.sin(an)*.5);
   } else {
-   const s=o.type==='ball'?sz*2:o.type==='cone'?sz*1.7:o.type==='pole'?sz*1.1:sz*.9; m.scale.set(s,s,s);
+   const s=o.type==='ball'?Math.max(.95,sz*1.23):o.type==='cone'?sz*1.7:o.type==='pole'?sz*1.1:sz*.9; m.scale.set(s,s,s);
    if(o.type==='ball'){let A=st.get(o.id); if(!A){A={x:o.x,y:o.y,r:0}; st.set(o.id,A);} const dd=Math.hypot(o.x-A.x,o.y-A.y); if(dd<8){A.r+=dd/(.11*s); m.userData.ball.rotation.x=A.r; m.rotation.y=Math.atan2(o.x-A.x,o.y-A.y)||m.rotation.y;} A.x=o.x; A.y=o.y;}
   }
  });
@@ -6647,7 +6806,15 @@ function frameCaps(fr){return fr.slice(0,-1).map(f=>f.cap||'');}
 function stepText(i){const n=frames.length-1; if(i>=n||!frames[i].cap) return ''; return narrationScript(curDrill?curDrill.ad:'',null,frameCaps(frames),mode==='drill'?'drill':'tactic').steps[i];}
 function interp(A,B,k){
  const map=new Map(A.objects.map(o=>[o.id,o])), bIds=new Set(B.objects.map(o=>o.id));
- const objs=B.objects.map(o=>{const a=map.get(o.id); return a?{...o,x:a.x+(o.x-a.x)*k,y:a.y+(o.y-a.y)*k}:{...o,_a:k};});
+ const blendAngle=(a,b)=>a+Math.atan2(Math.sin(b-a),Math.cos(b-a))*k;
+ const objs=B.objects.map(o=>{
+  const a=map.get(o.id);
+  if(!a) return {...o,_a:k};
+  const next={...o,x:a.x+(o.x-a.x)*k,y:a.y+(o.y-a.y)*k};
+  if(o.facing!=null) next.facing=o.turnFrom!=null&&a.facing!==o.facing?o.turnFrom+(o.facing-o.turnFrom)*k:blendAngle(a.facing??o.facing,o.facing);
+  if(o.headTurn!=null) next.headTurn=blendAngle(a.headTurn??0,o.headTurn);
+  return next;
+ });
  A.objects.forEach(o=>{if(!bIds.has(o.id)) objs.unshift({...o,_a:1-k});});
  return objs;
 }
@@ -6725,6 +6892,7 @@ function renderPanel(){
  <h4>ADIMLAR (dokunarak git)</h4><ol id="dsteps">${d.s.map((s,i)=>`<li data-i="${i}">${esc(s.t)}</li>`).join('')}</ol>
  <h4>ANTRENÖRÜN DİKKAT EDECEĞİ NOKTALAR</h4><ul>${d.anahtar.map(a=>`<li>${esc(a)}</li>`).join('')}</ul>
  <h4>VARYASYON / ZORLAŞTIRMA</h4><p>${esc(d.varyasyon)}</p>
+ ${d.kaynak?`<h4>KAYNAK</h4><p><a href="${esc(d.kaynak[1])}" target="_blank" rel="noopener noreferrer" style="color:var(--accent,#3ddc84)">${esc(d.kaynak[0])}</a></p>`:''}
  <h4>ÇİZİM ANAHTARI</h4><div class="legend">${sv('', '#fff')}<span>Pas</span>${sv('','#ffd400',1)}<span>Topsuz koşu</span>${sv('','#ffb020',0,1)}<span>Top sürme</span>${sv('','#ff3b30')}<span>Şut / gol</span></div>
  <p class="muted" style="margin-top:12px">Sahaya dokunarak animasyonu durdurup başlatabilirsiniz.</p>`;
  $('#dCine').onclick=()=>openCinema(drillVideoOpts(d));
@@ -6968,22 +7136,29 @@ async function synthClip(ac,text){
 }
 
 /* ---------- Kamera açısı ve aksiyonu izleyen kamera ---------- */
-const CAMS={alcak:{ad:'Alçak',e:16,t:64,ic:'⬇'},orta:{ad:'Orta',e:34,t:52,ic:'↘'},yuksek:{ad:'Yüksek',e:54,t:38,ic:'⬆'},tepe:{ad:'Tepe',e:88,t:8,ic:'⤓'}};
+const CAMS={
+ alcak:{ad:'Saha kenarı',e:16,t:64,ic:'↓'},
+ orta:{ad:'TV Yayını',e:26,t:57,ic:'↔',fov:36},
+ tribune:{ad:'Çapraz Tribün',e:34,t:52,ic:'↗',yaw:32,fov:40},
+ kale:{ad:'Kale Arkası',e:25,t:55,ic:'⇧',yaw:90,fov:53},
+ yuksek:{ad:'Geniş Taktik',e:54,t:38,ic:'↑'},
+ tepe:{ad:'Kuş Bakışı',e:88,t:8,ic:'⤓'}
+};
 const camKey=()=>CAMS[S.camA]?S.camA:'orta';
 let VIEWREF=null; // takip kamerasında oyuncu boyu sabit kalsın diye asıl görüş genişliği
 function camPickerHTML(id='camsel'){
- return `<label>Kamera açısı</label><div class="seg" id="${id}">${Object.entries(CAMS).map(([k,c])=>`<button data-c="${k}" class="${camKey()===k?'on':''}">${c.ic} ${c.ad}</button>`).join('')}</div>
+ return `<label>Kamera açısı</label><div class="seg" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px" id="${id}">${Object.entries(CAMS).map(([k,c])=>`<button data-c="${k}" class="${camKey()===k?'on':''}">${c.ic} ${c.ad}</button>`).join('')}</div>
   <label class="chk" style="display:flex;align-items:center;gap:8px;margin-top:8px"><input type="checkbox" id="${id}F" ${S.follow?'checked':''}> 🎥 Aksiyonu izle: kamera topu takip etsin, yaklaşıp uzaklaşsın</label>`;
 }
 function bindCamPicker(root,id='camsel',after){
- root.querySelectorAll('#'+id+' button').forEach(b=>b.onclick=()=>{S.camA=b.dataset.c; persist(); root.querySelectorAll('#'+id+' button').forEach(x=>x.classList.toggle('on',x===b)); updCam(); computeView(); render(); after&&after();});
+ root.querySelectorAll('#'+id+' button').forEach(b=>b.onclick=()=>{S.camA=b.dataset.c; if(CAMS[S.camA].yaw&&realOK()) S.vis='real'; persist(); root.querySelectorAll('#'+id+' button').forEach(x=>x.classList.toggle('on',x===b)); updCam(); computeView(); render(); after&&after();});
  const f=root.querySelector('#'+id+'F'); if(f) f.onchange=()=>{S.follow=f.checked; persist(); after&&after();};
 }
 function updCam(){const t=$('#bCamT'); if(t) t.textContent=CAMS[camKey()].ad;}
 function openCamMenu(){
  openModal(`<div class="shead"><h3>🎥 Kamera</h3><button class="pb" id="cmX">Kapat</button></div>
   ${camPickerHTML('camM')}
-  <p class="muted" style="margin-top:10px">Alçak: oyuncu hizasından, televizyon yayını gibi. Orta: tribünden. Yüksek: üst tribünden. Tepe: kuş bakışı, taktik çizimleri için en net görünüm. Aksiyonu izle açıkken tam ekran video ve WhatsApp videosu topu takip eder: top nereye giderse kamera oraya yaklaşır.</p>`,m=>{
+  <p class="muted" style="margin-top:10px">TV Yayını sahayı taç çizgisinden, Çapraz Tribün köşeye yakın bir açıdan, Kale Arkası ise kalenin gerisinden gösterir. Geniş Taktik ve Kuş Bakışı yerleşimi görmeyi kolaylaştırır. Çapraz Tribün ve Kale Arkası için 3B desteği gerekir. Aksiyonu izle seçeneği video oynatımında topu takip eder.</p>`,m=>{
   bindCamPicker(m,'camM'); m.querySelector('#cmX').onclick=closeModal;});
 }
 /* her adım için odak dikdörtgeni: top + o adımda hareket eden oyuncular */
@@ -7445,7 +7620,7 @@ function findMentions(cl){
  const out=[]; const re=MENTION_RE(); let m;
  while((m=re.exec(cl))){
   const col=m[1], num=m[2]!=null?+m[2]:m[3]?10+NWV[m[3]]:m[4]?10:m[5]!=null?NWV[m[5]]:null, numara=!!m[6];
-  if(num==null) continue;
+  if(num==null||/[0-9]/.test(cl[m.index-1]||'')||/^\s*derece/.test(cl.slice(re.lastIndex))) continue;
   if(m[2]==null&&!col&&!numara) continue;   // "bir pas" gibi sözcükleri oyuncu sanma
   out.push({team:col?teamOfColor(col):null,num,idx:m.index,len:m[0].length});
  }
@@ -7454,7 +7629,14 @@ function findMentions(cl){
 function parseTactic(text,objects){
  const objs=clone(objects); const steps=[]; const warn=[];
  let ball=objs.find(o=>o.type==='ball');
- let lastTeam='A', lastSubj=null, owner=null;
+ let lastTeam='A', lastSubj=null, owner=ball?holderOf(objs,ball):null;
+ let nextId=objs.reduce((id,o)=>Math.max(id,o.id+1),1);
+ const assigned={A:assignRoles(objs,'A','R'),B:assignRoles(objs,'B','R')};
+ const roleSpecs=[
+  [/sağ bek(?:imiz|in)?/,'RB'],[/sol bek(?:imiz|in)?/,'LB'],
+  [/sağ stoper/,'CBR'],[/sol stoper/,'CBL'],[/kaleci(?:miz)?/,'GK'],
+  [/sağ kanat oyuncusu/,'RW'],[/sol kanat oyuncusu/,'LW'],[/santrafor|santrfor/,'ST']
+ ];
  const moved=[]; // {o,from}
  const pName=o=>`${TEAMNAME[baseTeam(o.team)]} ${o.num}`;
  const findP=(T,n)=>objs.find(o=>o.type==='player'&&baseTeam(o.team)===T&&String(o.num)===String(n));
@@ -7472,30 +7654,49 @@ function parseTactic(text,objects){
   if(key==='wing') return rest.filter(p=>p.v<16||p.v>52).map(p=>p.o);
   return f.map(p=>p.o);
  }
- const clauses=text.replace(/\s+/g,' ').replace(/\s(aynı anda|bu sırada|o sırada|eş ?zamanlı( olarak)?)\s/gi,', $1 ').split(/[.;!?\n]+|,|\s(?:ve|sonra|ardından|daha sonra|sonrasında)\s/i).map(s=>s.trim()).filter(s=>s.length>2);
+ const clauses=text.replace(/(\d+(?:[.,]\d+)?\s*(?:metre|m)(?![a-zçğıöşü]))/giu,phrase=>phrase.replace('.',',').replace(',','~')).replace(/\s+/g,' ').replace(/\s(aynı anda|bu sırada|o sırada|eş ?zamanlı( olarak)?)\s/gi,', $1 ').split(/[.;!?\n]+|,|\s+(?:daha sonra|ardından|sonrasında|sonra|ve)\s+/i).map(s=>s.trim().replace('~',',')).filter(s=>s.length>2);
  let cur=null;
  const newStep=()=>{cur={from:clone(objs),parts:[],desc:[],ballSet:false}; steps.push(cur);};
  for(const raw of clauses){
   const cl=' '+raw.toLocaleLowerCase('tr-TR').replace(/[’`]/g,"'")+' ';
   if(!cur||!SIMUL.test(cl)) newStep();
   cur.parts.push(raw.charAt(0).toLocaleUpperCase('tr-TR')+raw.slice(1));
-  const ms=findMentions(cl);
-  const colM=cl.match(/kırmızı|mavi|rakip|bizim/); if(colM) lastTeam=teamOfColor(colM[0]);
+  const distance=cl.match(/(\d+(?:[.,]\d+)?)\s*(?:metre|m)(?![a-zçğıöşü])/);
+  const meters=distance?Math.max(.5,Math.min(60,Number(distance[1].replace(',','.')))):null;
+  const ms=findMentions(cl).filter(m=>!/^\s*(?:[.,]\d+\s*)?(?:metre|m)(?![a-zçğıöşü])/.test(cl.slice(m.idx+m.len)));
+  const roles=roleSpecs.flatMap(([re,key])=>{
+   const m=cl.match(re);
+   if(!m) return [];
+   // A flank is a destination unless it names a player or starts the clause.
+   const prefix=cl.slice(0,m.index).match(/(mavi|rakip|kırmızı|bizim)(?: takımın)?\s*$/);
+   return [{idx:m.index,team:prefix?teamOfColor(prefix[1]):null,role:key}];
+  });
+  const refs=[...ms,...roles].sort((a,b)=>a.idx-b.idx);
+  const resolve=(ref,T)=>{
+   if(ref.role) return assigned[T]?.[ref.role];
+   return findP(T,ref.num);
+  };
+  const colM=cl.match(/^\s*(?:(?:aynı anda|bu sırada|o sırada|bu arada)\s+)?(kırmızı|mavi|rakip|bizim)/); if(colM) lastTeam=teamOfColor(colM[0]);
   let gKey=null,gIdx=1e9,gName='';
   for(const [re,k,nm] of GROUPS){const r=new RegExp(re.source.replace(/\$\{TL\}/g,TL)); const m=cl.match(r); if(m&&m.index<gIdx){gKey=k;gIdx=m.index;gName=nm;}}
   // özne
-  let subj=null, subjGroup=null, objsM=ms;
-  if(ms.length&&(gKey==null||ms[0].idx<gIdx)){
-   const T=ms[0].team||lastTeam; const p=findP(T,ms[0].num);
-   if(!p){warn.push(`“${raw}”: ${TEAMNAME[T]} ${ms[0].num} tahtada yok`); continue;}
-   subj=p; lastTeam=T; objsM=ms.slice(1);
+  let subj=null, subjGroup=null, objsM=refs;
+  const first=refs[0], before=first?cl.slice(0,first.idx):'';
+  const objectOnly=lastSubj&&first&&(/(?:'ye|'ya|'e|'a|'u|'ü|'ı|'i|'yı|'yi|'yu|'yü)(?![a-zçğıöşü])/.test(cl.slice(first.idx,first.idx+(first.len||0)))||
+   /(?:\d|numara)(?:ye|ya|e|a|yı|yi|yu|yü|ı|i|u|ü)\s*$/.test(cl.slice(first.idx,first.idx+(first.len||0)))||
+   /^(?:pası|topu|ona)\s/.test(before.trim()));
+  if(first&&!objectOnly&&(gKey==null||first.idx<=gIdx)){
+   const T=first.team||lastTeam; const p=resolve(first,T);
+   if(!p){warn.push(`“${raw}”: ${TEAMNAME[T]} ${first.num??ROLE_TR[first.role]??first.role} tahtada yok`); continue;}
+   subj=p; lastTeam=T; objsM=refs.slice(1);
   } else if(gKey){
    subjGroup={T:lastTeam,key:gKey,name:gName,members:group(lastTeam,gKey)};
   } else if(lastSubj) subj=lastSubj;
   else {warn.push(`“${raw}”: kimin hareket ettiğini anlayamadım`); continue;}
   const sT=subj?baseTeam(subj.team):lastTeam, oT=sT==='A'?'B':'A';
-  const wantSame=/pas|orta|aktar|oynar|verir|atar/.test(cl)&&!/baskı|pres|takip|markaj/.test(cl);
-  const objP=objsM.map(m=>m.team?findP(m.team,m.num):(findP(wantSame?sT:oT,m.num)||findP(wantSame?oT:sT,m.num))).filter(Boolean);
+  const passVerb=objsM.length>0&&/\b(?:ver(?:ir|sin|elim|di)|at(?:ar|sın|alım|tı)|oyna(?:r|sın|yalım|dı)|aktar(?:ır|sın|alım|dı))\b/.test(cl);
+  const wantSame=(passVerb||/pas|orta|aktar|oynar|verir|atar/.test(cl))&&!/baskı|pres|takip|markaj|kapat/.test(cl);
+  const objP=objsM.map(m=>m.team?resolve(m,m.team):(resolve(m,wantSame?sT:oT)||resolve(m,wantSame?oT:sT))).filter(Boolean);
   const otherRef=()=>objP[0]||(lastSubj&&lastSubj!==subj?lastSubj:null);
   // ---- grup hareketi
   if(subjGroup){
@@ -7504,8 +7705,8 @@ function parseTactic(text,objects){
    members.forEach(o=>{
     let [u,v]=uvOf(o,T); const f0=[o.x,o.y];
     if(/pres|baskı/.test(cl)){u+=12; v+= (bv-v)*.25; did[0]='pres yapar';}
-    else if(/yukarı|ileri|öne|yüksel|hattı çık|çıkar|çıkıyor/.test(cl)&&!/geri|aşağı/.test(cl)){u+=8; did[0]='ileri çıkar';}
-    if(/aşağı|geri|çekil|derine in|iner|düşer/.test(cl)){u-=8; did[0]='geri çekilir';}
+    else if(/yukarı|ileri|öne|yüksel|hattı çık|çıkar|çıkıyor/.test(cl)&&!/geri|aşağı/.test(cl)){u+=meters??8; did[0]='ileri çıkar';}
+    if(/aşağı|geri|çekil|derine in|iner|düşer/.test(cl)){u-=meters??8; did[0]='geri çekilir';}
     if(/sola/.test(cl)){v-=8; did[1]='sola kayar';} if(/sağa/.test(cl)){v+=8; did[1]='sağa kayar';}
     if(/topa doğru|topun (olduğu )?taraf/.test(cl)){v+=Math.sign(bv-v)*Math.min(8,Math.abs(bv-v)); did[1]='topa doğru kayar';}
     if(/daral|kompakt|sıkış|kapan/.test(cl)){v=34+(v-34)*.7; did[2]='daralır';}
@@ -7519,14 +7720,29 @@ function parseTactic(text,objects){
    continue;
   }
   // ---- tek oyuncu
+  cur.actor??=subj.id;
   const T=baseTeam(subj.team); let [u,v]=uvOf(subj,T); const from=[subj.x,subj.y];
   const ballUV=ball?uvOf(ball,T):[52,34];
   let target=null, label='';
-  const isShot=/şut|vurur|gole|kaleye|bitirir|golü atar/.test(cl);
+  const isShot=/şut|vur(?:ur|sun|du)|gole çevir|kaleye (?:vur|gönder|vursun)|bitir(?:ir|sin)|golü at/.test(cl);
   const isCross=/orta (yapar|açar|kesir|verir|gönderir)|ortalar|ortayı/.test(cl);
-  const isPass=!isShot&&!isCross&&/pas|topu (verir|atar|oynar|aktarır|gönderir|indirir|bırakır|açar)|aktarır|(?<![a-zçğıöşü])oynar|topu .*(?:e|a|ye|ya) (?:verir|atar)/.test(cl);
+  const isPass=!isShot&&!isCross&&!/pas(?:ı al| hattını kapat| açısını kapat)/.test(cl)&&(passVerb||/pas|topu (verir|atar|oynar|aktarır|gönderir|indirir|bırakır|açar)|aktarır|(?<![a-zçğıöşü])oynar|topu .*(?:e|a|ye|ya) (?:verir|atar)/.test(cl));
   const isDrib=/sürer|top ?sür|topla (ilerler|gider|çıkar|koşar)|sürerek/.test(cl);
-  const isRecv=/topu (alır|kontrol)|topla buluşur|pası alır/.test(cl);
+  const isRecv=/topu (al|kontrol)|topla buluş|pası al/.test(cl);
+  const turning=/(sola|sağa|yüzünü|yarım|180|270).{0,22}(dön|çevir)|(?:dön|çevir).{0,15}(sola|sağa)/.test(cl);
+  const scanning=/omuz|omz|çevre kontrol|\btara(?:r|sın|ma|sınlar)?\b/.test(cl);
+  if(turning){
+   const start=subj.facing??(T==='A'?Math.PI/2:-Math.PI/2);
+   const degrees=/270/.test(cl)?270:/180/.test(cl)?180:90;
+   subj.turnFrom=start;
+   subj.facing=start+(cl.includes('sola')?1:-1)*degrees*Math.PI/180;
+   subj.headTurn=0;
+   cur.desc.push(`${pName(subj)} → ${cl.includes('sola')?'sola':cl.includes('sağa')?'sağa':'uygun açıya'} döner`);
+  }
+  if(scanning){
+   subj.headTurn=cl.includes('sol')?.95:-.95;
+   cur.desc.push(`${pName(subj)} → omuz kontrolü`);
+  }
   // hedef bölge
   const Z=[
    [/sol (çizgi|taç|kenar)/,()=>[u+6,4],'sol çizgi'],[/sağ (çizgi|taç|kenar)/,()=>[u+6,64],'sağ çizgi'],
@@ -7544,7 +7760,25 @@ function parseTactic(text,objects){
   const vac=/boşal(an|ttığı|tığı)|bıraktığı|boş kalan|onun yerine|yerine (geçer|gelir|girer)|boşluğa gelir/.test(cl);
   const follow=/onunla|onu takip|ona eşlik|peşinden|markaj|onu tutar|takip eder|ile birlikte gelir/.test(cl);
   const press=/baskı|pres|üzerine (çıkar|gider|gelir)/.test(cl);
-  if(vac){
+  const shield=/zayıf aya|güçlü aya|(?:sağ|sol)\s+(?:ayağını|ayağa|ayak tarafını)|pas (hattını|açısını) kapat/.test(cl)&&/kapat|zorla|yönlendir/.test(cl);
+  const between=/stoperlerin arasına|iki stoperin arasına/.test(cl);
+  if(between){
+   const r=assigned[T], pair=[r?.CBL,r?.CBR];
+   if(pair.every(Boolean)&&pair[0]!==pair[1]){
+    target=[(pair[0].x+pair[1].x)/2,(pair[0].y+pair[1].y)/2]; label='stoperlerin arası';
+   }
+  } else if(shield){
+   const r=otherRef()|| (ball?holderOf(objs,ball):null);
+   if(r&&baseTeam(r.team)!==T){
+    const [ru,rv]=uvOf(r,T);
+    const lane=/sol (aya|taraf)/.test(cl)?1:/sağ (aya|taraf)/.test(cl)?-1:(rv<34?1:-1);
+    const weak=/zayıf aya/.test(cl)&&!/(kapat|güçlü aya)/.test(cl);
+    target=xyOf(ru-2.4,rv+(weak?-lane:lane)*1.5,T);
+    delete subj.turnFrom;
+    subj.facing=Math.atan2(r.x-target[0],r.y-target[1]);
+    label='pas ve güçlü ayak tarafını kapatır';
+   }
+  } else if(vac){
    const m=[...moved].reverse().find(x=>x.o!==subj&&baseTeam(x.o.team)===T)||[...moved].reverse().find(x=>x.o!==subj);
    if(m){target=m.from.slice(); label='boşalan alan';} else warn.push(`“${raw}”: boşalan alanı bulamadım (önce birinin hareket etmesi gerekir)`);
   } else if(follow||press){
@@ -7552,24 +7786,32 @@ function parseTactic(text,objects){
    if(r){const [ru,rv]=uvOf(r,T); const same=baseTeam(r.team)===T;
     target=xyOf(same?ru-4:ru-(press?1.5:2.2),same?rv+(rv<34?6:-6):rv,T); label=(press?'baskı: ':same?'destek: ':'takip: ')+pName(r);}
    else warn.push(`“${raw}”: kimi takip edeceğini anlayamadım`);
-  } else {
-   for(const [re,f,l] of Z){ if(re.test(cl)){ const [uu,vv]=f(); target=xyOf(uu,vv,T); label=l; break; } }
+  } else if(!turning&&!scanning){
+   if(meters!==null&&/ileri|öne|geri|sağa|sola/.test(cl)){
+    const du=/ileri|öne/.test(cl)?meters:/geri/.test(cl)?-meters:0;
+    const dv=/sağa/.test(cl)?meters:/sola/.test(cl)?-meters:0;
+    target=xyOf(u+du,v+dv,T); label=`${meters} m ${du>0?'ileri':du<0?'geri':''} ${dv>0?'sağa':dv<0?'sola':''}`.trim();
+   }else for(const [re,f,l] of Z){if(re.test(cl)){const [uu,vv]=f(); target=xyOf(uu,vv,T); label=l; break;}}
   }
   // top işlemleri
-  if(!ball&&(isPass||isShot||isCross||isDrib)){ball={id:uid++,type:'ball',x:subj.x+.8,y:subj.y+.6}; objs.push(ball); cur.from.push(clone(ball));}
-  if(target){[subj.x,subj.y]=[R2(target[0]),R2(target[1])]; moved.push({o:subj,from}); cur.desc.push(`${pName(subj)} → ${label}`);}
+  if(!ball&&(isPass||isShot||isCross||isDrib||isRecv)){
+   ball={id:nextId++,type:'ball',x:subj.x+.8,y:subj.y+.6};
+   objs.push(ball);
+  }
+  if(target&&!isPass&&!isCross&&!turning&&!shield){delete subj.facing; delete subj.headTurn; delete subj.turnFrom;}
+  if(target&&(!isPass&&!isCross||isDrib)){[subj.x,subj.y]=[R2(target[0]),R2(target[1])]; moved.push({o:subj,from}); cur.desc.push(`${pName(subj)} → ${label}`);}
   if(isDrib){owner=subj; if(!target){[subj.x,subj.y]=xyOf(u+10,v,T); target=[subj.x,subj.y]; moved.push({o:subj,from}); cur.desc.push(`${pName(subj)} → top sürer`);} }
   if(isRecv){owner=subj; ball.x=R2(subj.x+.8); ball.y=R2(subj.y+.6); cur.ballSet=true; cur.desc.push(`${pName(subj)} topu alır`);}
   if(isShot){ const [gx,gy]=T==='A'?[104.7,32.6]:[.3,35.4]; ball.x=R2(gx); ball.y=R2(gy); owner=null; cur.ballSet=true; cur.desc.push(`${pName(subj)} → şut`);}
   else if(isCross||isPass){
    const r=objP[0]||(/(?<![a-zçğıöşü])ona(?![a-zçğıöşü])|onun/.test(cl)&&lastSubj&&lastSubj!==subj?lastSubj:null);
    if(r){ball.x=R2(r.x+.8); ball.y=R2(r.y+.6); owner=r; cur.desc.push(`${isCross?'Orta':'Pas'}: ${pName(subj)} → ${pName(r)}`);}
-   else if(target&&!r){ball.x=R2(subj.x); ball.y=R2(subj.y); owner=null; cur.desc.push(`${isCross?'Orta':'Pas'}: ${pName(subj)} → ${label}`);}
+   else if(target&&!r){ball.x=R2(target[0]); ball.y=R2(target[1]); owner=null; cur.desc.push(`${isCross?'Orta':'Pas'}: ${pName(subj)} → ${label}`);}
    else if(isCross){const [bx,by]=xyOf(97,34,T); ball.x=bx; ball.y=by; owner=null; cur.desc.push(`Orta: ${pName(subj)} → ceza sahası`);}
    else warn.push(`“${raw}”: pasın kime gittiğini anlayamadım`);
    cur.ballSet=true;
   }
-  if(!target&&!isDrib&&!isRecv&&!isShot&&!isCross&&!isPass) warn.push(`“${raw}”: ${pName(subj)} için hareketi anlayamadım`);
+  if(!target&&!isDrib&&!isRecv&&!isShot&&!isCross&&!isPass&&!turning&&!scanning) warn.push(`“${raw}”: ${pName(subj)} için hareketi anlayamadım`);
   lastSubj=subj;
   // topa sahip oyuncu koştuysa top onunla gider
   if(owner&&ball&&!cur.ballSet&&owner===subj&&target){ball.x=R2(subj.x+.8); ball.y=R2(subj.y+.6);}
@@ -7577,7 +7819,17 @@ function parseTactic(text,objects){
  }
  // adım kareleri
  const out=[]; let prev=clone(objects);
- steps.forEach(st=>{ if(!st.objs) return; out.push({objects:prev,drawings:[],cap:st.parts.join(' · '),desc:st.desc}); prev=st.objs; });
+ steps.forEach(st=>{
+  if(!st.objs||!st.desc.length) return;
+  // Seed a newly created ball where the action starts, so the first pass travels.
+  const b=st.objs.find(o=>o.type==='ball');
+  if(b&&!prev.some(o=>o.id===b.id)){
+   const p=prev.find(o=>o.id===st.actor);
+   prev=prev.concat({...b,x:p?p.x+.8:b.x,y:p?p.y+.6:b.y});
+  }
+  out.push({objects:prev,drawings:[],cap:st.parts.join(' · '),desc:st.desc});
+  prev=st.objs;
+ });
  if(out.length) out.push({objects:prev,drawings:[],cap:'',desc:[]});
  for(let i=0;i<out.length-1;i++) out[i].drawings=autoArrows(out[i].objects,out[i+1].objects);
  return {frames:out,warn};
@@ -8322,6 +8574,57 @@ PLAYBOOK.push(
  build:(s,r)=>{ s.mv(r.ST,52.6,34.5); s.give(r.ST); s.mv(r.AM,51.5,37);
   s.step(`Geri: ${N(r.DM)}`); s.pass(r.ST,r.DM); s.mv(r.W,66,62);
   s.step('Kanala uzun top'); s.mv(r.W,88,62); s.pass(r.DM,r.W); s.mv(r.ST,78,36); }}
+,{id:'lavolpe',ad:'La Volpe Çıkışı: 6 Stoperlerin Arasına',kat:'Hücum',side:1,
+ re:/la ?volpe|lavolpiana|6 numara.*stoperlerin arasına/,
+ amac:'İki forvetli prese karşı 6 numarayla geride pas üstünlüğü oluşturmak.',
+ ilke:['İki stoper genişler','6 numara ilk hatta iner','Bekler genişlik verir, boş stoper topla çıkar'],
+ gorev:r=>[[r.DM,'İki stoperin arasına in.'],[r.CB,'Top sana döndüğünde ilk pres hattını geç.'],[r.FB,'Çizgide ileri pas açısı ver.']],
+ build:(s,r)=>{
+  if(!r.GK||!r.DM||r.CB===r.CBo) return;
+  s.give(r.GK);
+  s.step('6 numara stoperlerin arasına iner; bekler genişler.');
+  s.mv(r.CB,17,49); s.mv(r.CBo,17,19); s.mv(r.DM,16,34); s.mv(r.FB,35,62); s.mv(r.FBo,35,6);
+  s.step('Kaleci 6 numarayı bulur, 6 boş stopere aktarır.'); s.pass(r.GK,r.DM);
+  s.step('6 pası açık taraftaki stopere aktarır.'); s.pass(r.DM,r.CB);
+  s.step('Stoper ilk pres hattını geçip beke oynar.'); s.drib(r.CB,30,48);
+  s.step('Bek çizgide topu kontrol eder.'); s.pass(r.CB,r.FB);
+ }},
+{id:'kutuortasaha',ad:'Kutu Orta Saha: 3-2-4-1',kat:'Hücum',side:1,
+ re:/kutu orta saha|box midfield|3[-– ]2[-– ]4[-– ]1/,
+ amac:'İki pivot ve iki 10 numarayla rakibin orta saha hattının iki tarafında pas açıları oluşturmak.',
+ ilke:['Ön ikili aynı çizgide saklanmaz','İki kanat genişliği korur','Top kaybında iki pivot merkezde kalır'],
+ gorev:r=>[[r.DM,'İlk pivot olarak topa açı ver.'],[r.FB,'İkinci pivot olarak merkeze gir.'],[r.AM,'Rakip orta saha hattının arkasında pas iste.']],
+ build:(s,r)=>{
+  if(r.all.length<10||!r.DM||!r.AM) return;
+  const back=[...new Set([r.CB,r.CBo,r.FBo])].filter(Boolean);
+  const [p1,p2]=[r.DM,r.FB];
+  const front=[...new Set([r.AM,r.CM,r.CMo,...r.mids,...r.all])].filter(p=>p&&![...back,p1,p2,r.W,r.Wo,r.ST].includes(p)).slice(0,2);
+  if(new Set([...back,p1,p2,...front,r.W,r.Wo,r.ST]).size!==10||front.length!==2) return;
+  s.give(back[0]);
+  s.step('Üçlü taban kurulur; iki pivot önünde, iki 10 numara ileride.');
+  back.forEach((p,i)=>s.mv(p,37,19+15*i));
+  s.mv(p1,49,25); s.mv(p2,49,43); s.mv(front[0],65,23); s.mv(front[1],62,45);
+  s.mv(r.W,69,63); s.mv(r.Wo,69,5); s.mv(r.ST,76,34);
+  s.step('Stoper ikinci pivotu bulur.'); s.pass(back[0],p2);
+  s.step('Pivot hat arasındaki 10 numaraya oynar.'); s.pass(p2,front[1]);
+  s.step('10 numara yüzünü döner ve geniş kanadı bulur.'); s.pass(front[1],r.W);
+ }},
+{id:'zayifayak',ad:'Bire Bir Savunma: Zayıf Ayağa Yönlendir',kat:'Savunma',side:0,def:1,
+ re:/zayıf aya[ğk]|güçlü aya[ğk].*kapat/,
+ amac:'Hücumcunun tercih ettiği ayağın tarafını kapatarak onu daha az tehlikeli koridora taşımak.',
+ ilke:['Pas sırasında yaklaş','Güçlü ayak tarafını yan duruşla kapat','Rakibi dışa taşırken kaleyi koru'],
+ gorev:(r,o,x)=>[[r.FB,'Güçlü ayağın tarafına açılı yaklaş ve frenle.']],
+ build:(s,r,o,x)=>{
+  const a=o.W||o.ST, d=r.FB;
+  if(!a||!d) return;
+  const strong=x.strong==='sol'?1:-1;
+  s.mv(a,24,34); s.mv(d,15,34); s.give(a);
+  s.step('Savunmacı güçlü ayak tarafına açılı yaklaşır.'); s.mv(d,21,34+strong*1.6);
+  s.step('Hücumcu zayıf ayağına sürer; savunmacı kale tarafında eşlik eder.');
+  s.drib(a,20,34-strong*6); s.mv(d,17,34-strong*3);
+  s.step('Savunmacı içeri dönüş yolunu kapalı tutar.');
+  s.drib(a,16,34-strong*10); s.mv(d,13,34-strong*7);
+ }}
 );
 // markaj daha seçici olsun (genel "kapat/tut" kelimeleri başka taktikleri karıştırmasın)
 PLAYBOOK.find(p=>p.id==='markaj').re=/markaj|adam adama(?! pres)|(?:\d{1,2}|on|dokuz|yedi|sekiz|altı|beş|dört|üç|iki|bir)['’]?(?:u|ü|ı|i|yu|yü|yı|yi|nu|nü|ını|ini|unu|ünü)? (kapat|tut|takip)|yakın takip|boş bırakma|tehlikeli oyuncu|rakip(in)? (10|on|yıldız)/;
@@ -8385,7 +8688,7 @@ coachRespond=function(text,ctx){
  const t=' '+text.toLocaleLowerCase('tr-TR').replace(/[’`]/g,"'")+' ';
  // diziliş komutu
  const fi_=formationIntent(t);
- if(fi_&&/(geç|oyna|dizil|kur|çık|başla|diziliş|sistem)/.test(t)){
+ if(fi_&&!(/3[-– ]2[-– ]4[-– ]1/.test(t)&&fi_.err)&&/(geç|oyna|dizil|kur|çık|başla|diziliş|sistem)/.test(t)){
   if(fi_.err) return {kind:'text',text:fi_.err};
   applyFormation(fi_.T,'11',fi_.name); S['f'+fi_.T]='11|'+fi_.name; persist();
   const rest=t.replace(/(?<![0-9])[3-5]\s*[-–. ]\s*[1-5]\s*[-–. ]\s*[1-5](\s*[-–. ]\s*[1-3])?/,'');
@@ -8398,19 +8701,31 @@ coachRespond=function(text,ctx){
  if(/rakib(in)? sağ/.test(t)) side='L'; else if(/rakib(in)? sol/.test(t)) side='R';
  else if(/(?<![a-zçğıöşü])sol/.test(t)) side='L'; else if(/(?<![a-zçğıöşü])sağ/.test(t)) side='R';
  if(ctx.last&&/^ *(sol|sağ)( kanat(tan)?| taraftan| taraf)?[ .!]*$/.test(t.trim())){
+  if(ctx.last.custom) return {kind:'text',text:'Özel animasyon için hareket edecek oyuncuyu ve yeni yönü söyleyin.'};
   if(ctx.last.chain) return runChain(ctx.last.chain,T,side,ctx,ctx.last.x);
   return runPlay(ctx.last.play,T,side,ctx,text,ctx.last.x);
  }
  if(ctx.last&&/(tekrar|yeniden) (oynat|göster)/.test(t)) return {kind:'replay'};
  if(ctx.last&&/(oyunculara|whatsapp|gönder|paylaş)/.test(t)) return {kind:'share'};
+ const explicit=findMentions(t).some(m=>!/^(?:[.,]\d+)?\s*(?:metre|m)\b/.test(t.slice(m.idx+m.len)))||
+  /(?:sağ|sol) (?:bek|stoper)|kaleci(?:miz)? (?:topu|açılır|çıkar)|stoperler (?:açıl|genişle)|savunma hattı.{0,25}(?:kay|çıksın|çekil)/.test(t);
+ const named=matchPlays(t);
+ const detailed=explicit&&(!named.length||/[,.;]| sonra | ardından | aynı anda | ve |\d+\s*(?:metre|m)\b/.test(t.trim())||/zayıf aya|güçlü aya/.test(t));
+ if(detailed){
+  const r=parseTactic(text,cur().objects);
+  if(r.frames.length<2) return {kind:'text',text:r.warn.length?r.warn.join(' · '):'Oyuncuyu ve hareket yönünü söyleyin. Örnek: Sağ bek 8 metre ileri çıksın.'};
+  ctx.last={custom:true};
+  return {kind:'play',ad:'Senin taktiğin',kat:'Özel',frames:r.frames,warn:r.warn,
+   steps:r.frames.slice(0,-1).map(f=>f.desc.join(' · ')||f.cap),
+   note:{amac:text.trim(),gorev:[],ilke:[]},auto:false};
+ }
  let list=[], why='';
  for(const [re,id,w] of ADVICE){ if(re.test(t)&&playById(id)){ list=[playById(id)]; why=w; break; } }
- const named=matchPlays(t);
  if(named.length>1||(named.length===1&&!/rakip|yiyoruz|lazım|geride|öndeyiz|kazanıyoruz/.test(t))||!list.length){ if(named.length){ list=named; if(named.length>1) why=''; } }
  if(list.length===1&&list[0].id==='markaj'){ const r=coachRespondBase(text,ctx); if(why&&r.kind==='play') r.why=why; return r; }
  list=list.filter(p=>p.id!=='markaj');
  if(list.length){
-  const r=list.length===1?runPlay(list[0],T,side,ctx,text,{}):runChain(list,T,side,ctx,{});
+  const r=list.length===1?runPlay(list[0],T,side,ctx,text,{strong:/sol ayaklı|güçlü ayağı sol/.test(t)?'sol':'sağ'}):runChain(list,T,side,ctx,{});
   if(why&&r.kind==='play') r.why=why;
   return r;
  }
@@ -8421,7 +8736,7 @@ coachRespond=function(text,ctx){
 const coachCtx={last:null,res:null,msgs:[]};
 function openCoach(){
  if(playing) stopPlay();
- const ex=['Rakibin sağ beki yavaş, sol kanattan bindirme yapalım','Önde pres yapalım','Kontra atak','Mavi 10’u kapatalım','Korner organizasyonu','Kırmızı 9 sol çizgiye gider, mavi 7 onunla gelir'];
+ const ex=['Rakibin sağ beki yavaş, sol kanattan bindirme yapalım','Önde pres yapalım','Kontra atak','Mavi 10’u kapatalım','Korner organizasyonu','Sağ bek 8 metre ileri çıksın, aynı anda kırmızı 6 stoperlerin arasına insin. Ardından kırmızı 6 sağ beke pas versin.'];
  openModal(`<div class="shead"><h3>${icon('bot')} Taktik Ver</h3><button class="pb" id="cC">Kapat</button></div>
   <div class="cpw"><canvas id="cPitch"></canvas><button class="pb sm" id="cpBig" title="Büyük izle">⛶</button></div>
   <div class="seg ctabs" id="ctabs"><button data-t="chat" class="on">💬 Anlat</button><button data-t="lib">📚 Taktik Kütüphanesi (${PLAYBOOK.length})</button></div>
