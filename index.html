@@ -58,6 +58,15 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;displa
 #vset .vrow{display:flex;align-items:center;gap:8px;padding:8px;border-radius:10px;border:1px solid var(--line);margin-bottom:6px}
 #vset .vrow span{flex:1;font-size:14px}
 #vset .vrow.on{border-color:var(--acc)}
+#ctabs{margin:0 0 8px}#ctabs button{flex:1}
+#clib{display:flex;flex-direction:column;gap:8px;overflow:auto;flex:1;min-height:0}
+#clib input{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--tx);font-size:15px}
+#clib .side-q{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+#llist{display:flex;flex-direction:column;gap:6px;padding-bottom:10px}
+#llist .lkh{font-weight:800;color:var(--acc);margin-top:6px;font-size:13px;letter-spacing:.5px;text-transform:uppercase}
+#llist .lcard{text-align:left;background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:12px;padding:10px 12px;color:var(--tx);display:flex;flex-direction:column;gap:3px;cursor:pointer}
+#llist .lcard:active,#llist .lcard:hover{border-color:var(--acc)}
+#llist .lcard span{font-size:12.5px;color:var(--mut)}
 #cine .cbar{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
 .chip{min-width:40px;height:34px;border-radius:9px;background:var(--panel2);border:1px solid var(--line);color:var(--tx);font:700 14px system-ui;flex:none;cursor:pointer;padding:0 10px}
 .chip.on{background:var(--acc);color:var(--accd);border-color:var(--acc)}
@@ -314,7 +323,6 @@ body.m-home #capOv,body.m-lib #capOv{display:none!important}
   <button class="btn" id="bAddFrame" title="Yeni kare ekle" data-i="plus"></button>
   <button class="btn" id="bDelFrame" title="Kareyi sil" data-i="minus"></button>
   <button class="btn" id="bGhost" title="Önceki karenin izini göster" data-i="ghost"></button>
-  <button class="btn hl" id="bVoiceT" title="Sesle ya da yazıyla taktik anlat" data-i="mic"><span class="hide-p">Sesle taktik</span></button>
   <button class="btn hl" id="bVideo" title="Animasyonu video yap ve paylaş" data-i="video"><span class="hide-p">Video</span></button>
  </footer>
  <footer id="dbar">
@@ -3243,6 +3251,11 @@ function openCoach(){
  if(playing) stopPlay();
  const ex=['Rakibin sağ beki yavaş, sol kanattan bindirme yapalım','Önde pres yapalım','Kontra atak','Mavi 10’u kapatalım','Korner organizasyonu','Kırmızı 9 sol çizgiye gider, mavi 7 onunla gelir'];
  openModal(`<div class="shead"><h3>${icon('bot')} Taktik Ver</h3><button class="pb" id="cC">Kapat</button></div>
+  <div class="seg ctabs" id="ctabs"><button data-t="chat" class="on">💬 Anlat</button><button data-t="lib">📚 Taktik Kütüphanesi (${PLAYBOOK.length})</button></div>
+  <div id="clib" style="display:none"><input id="lq" placeholder="Taktik ara… (ör. pres, korner, kanat)" autocomplete="off">
+   <div class="seg" id="lkat"><button data-k="" class="on">Hepsi</button>${KAT_ORDER.map(k=>`<button data-k="${k}">${k}</button>`).join('')}</div>
+   <div class="side-q"><span class="muted">Kanat:</span><div class="seg" id="lside"><button data-s="R" class="on">Sağ</button><button data-s="L">Sol</button></div><span class="muted">Takım:</span><div class="seg" id="lteam"><button data-t="A" class="on">Kırmızı</button><button data-t="B">Mavi</button></div></div>
+   <div id="llist"></div></div>
   <div class="chat" id="chat"></div>
   <div class="chips2" id="cex">${ex.map(e=>`<button class="pb sm">${esc(e)}</button>`).join('')}</div>
   <div class="cin"><textarea id="cT" rows="2" placeholder="Maçta ne yapmak istiyorsunuz? Yazın ya da 🎤 ile söyleyin…"></textarea>
@@ -3265,10 +3278,10 @@ function openCoach(){
   const render2=()=>render();
   if(!coachCtx.msgs.length) add('bot',`Merhaba hocam! Maçta ne yapmak istediğinizi anlatın, tahtadaki dizilişe göre animasyonunu kurayım ve oyunculara gidecek notu hazırlayayım.<br><span class="muted">Örnek: “Rakibin sağ beki yavaş, sol kanattan bindirme yapalım.”</span>`);
   else render();
-  function send(txt){
+  function send(txt,forced){
    const q=(txt||ta.value).trim(); if(!q) return; ta.value='';
    add('me',esc(q));
-   const res=coachRespond(q,coachCtx);
+   const res=forced?forced():coachRespond(q,coachCtx);
    if(res.kind==='help'){
     const g=KAT_ORDER.map(k=>`<b>${k}</b><br>${PLAYBOOK.filter(p=>p.kat===k).map(p=>`<button class="pb sm" data-act="ex" data-v="${esc(p.ad)}">${esc(p.ad)}</button>`).join(' ')}`).join('<br>');
     add('bot',`Bilgi bankamdaki taktikler (birine dokunun):<br>${g}<br><span class="muted">Ayrıca “kırmızı 9 sol çizgiye gider, mavi 7 onunla gelir” gibi tek tek hareketleri de kurarım.</span>`); return;
@@ -3294,6 +3307,25 @@ function openCoach(){
     <div class="row" style="margin-top:8px"><button class="pb pri sm" data-act="watch">▶ Videoyu izle (sesli)</button><button class="pb sm wa2" data-act="share">Oyunculara gönder (video + yazı)</button><button class="pb sm" data-act="text">Sadece yazı</button></div>`);
   }
   m.querySelector('#cSend').onclick=()=>send();
+  // ---- Taktik kütüphanesi sekmesi ----
+  const lib=m.querySelector('#clib'), chatEls=[chat,m.querySelector('#cex'),m.querySelector('.cin')];
+  let lk='', lside='R', lteam='A';
+  const showTab=t=>{m.querySelectorAll('#ctabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===t)); lib.style.display=t==='lib'?'':'none'; chatEls.forEach(e=>e.style.display=t==='lib'?'none':''); if(t==='lib') drawLib(); else chat.scrollTop=chat.scrollHeight;};
+  m.querySelectorAll('#ctabs button').forEach(b=>b.onclick=()=>showTab(b.dataset.t));
+  const segPick=(id,attr,fn)=>m.querySelectorAll(id+' button').forEach(b=>b.onclick=()=>{m.querySelectorAll(id+' button').forEach(x=>x.classList.toggle('on',x===b)); fn(b.dataset[attr]);});
+  segPick('#lkat','k',v=>{lk=v; drawLib();}); segPick('#lside','s',v=>lside=v); segPick('#lteam','t',v=>lteam=v);
+  const norm=x=>x.toLocaleLowerCase('tr-TR');
+  function drawLib(){
+   const q=norm(m.querySelector('#lq').value.trim());
+   const L=PLAYBOOK.filter(p=>(q||!lk||p.kat===lk)&&(!q||norm(p.ad+' '+p.amac+' '+p.kat).includes(q)));
+   m.querySelector('#llist').innerHTML=L.length?KAT_ORDER.filter(k=>L.some(p=>p.kat===k)).map(k=>`<div class="lkh">${k}</div>`+L.filter(p=>p.kat===k).map(p=>`<button class="lcard" data-id="${p.id}"><b>${esc(p.ad)}</b><span>${esc(p.amac)}</span></button>`).join('')).join(''):'<p class="muted">Bulunamadı. Sohbet sekmesinde kendi cümlenizle anlatabilirsiniz.</p>';
+   m.querySelectorAll('#llist .lcard').forEach(b=>b.onclick=()=>{
+    const p=PLAYBOOK.find(x=>x.id===b.dataset.id); showTab('chat');
+    if(p.id==='markaj'){send(lteam==='A'?'mavi 10’u kapatalım':'kırmızı 10’u kapatalım'); return;}
+    send(p.ad+(p.side?(lside==='L'?' (sol kanat)':' (sağ kanat)'):''),()=>runPlay(p,lteam,p.side?lside:null,coachCtx,p.ad,{}));
+   });
+  }
+  m.querySelector('#lq').oninput=drawLib;
   ta.onkeydown=e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault(); send();}};
   m.querySelectorAll('#cex button').forEach(b=>b.onclick=()=>{ta.value=b.textContent; send();});
   m.querySelector('#cC').onclick=closeModal;
@@ -3431,7 +3463,7 @@ $('#bBackLib').onclick=()=>setMode('lib');
 $('#bEditDrill').onclick=editDrillOnBoard;
 $('#bShareDrill').onclick=()=>openShareDrill(curDrill);
 $('#bVideo').onclick=openBoardVideo;
-$('#bVoiceT').onclick=openVoiceTactic;
+
 $('#bCoach').onclick=openCoach;
 $('#sbarB').onclick=openSession;
 $('#dVoice').onclick=()=>{unlockSpeech(); S.voice=!S.voice; persist(); if(!S.voice) TTS.stop(); else if(!TTS.ok()) toast('Bu cihazda sesli okuma desteklenmiyor'); else if(!playing) TTS.speak(stepText(fi)||curDrill.ad); updateUI();};
