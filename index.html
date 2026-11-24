@@ -70,6 +70,17 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;displa
 #llist .lcard{text-align:left;background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:12px;padding:10px 12px;color:var(--tx);display:flex;flex-direction:column;gap:3px;cursor:pointer}
 #llist .lcard:active,#llist .lcard:hover{border-color:var(--acc)}
 #llist .lcard span{font-size:12.5px;color:var(--mut)}
+.recui{margin-top:10px;border:1px solid var(--line);border-radius:14px;padding:10px;background:rgba(0,0,0,.25)}
+.recui .rtop{display:flex;align-items:center;gap:10px;margin-bottom:8px;font-variant-numeric:tabular-nums}
+.recui .rtop b{font-size:20px}
+.rbadge{padding:4px 10px;border-radius:999px;background:#3a3f3c;color:#fff;font-weight:800;font-size:13px;letter-spacing:.5px}
+.rbadge.live{background:#e53935;animation:rpulse 1s infinite}.rbadge.done{background:var(--acc);color:#04140b}
+@keyframes rpulse{50%{opacity:.55}}
+.recui .lvl{flex:1;height:8px;border-radius:4px;background:rgba(255,255,255,.12);overflow:hidden}.recui .lvl i{display:block;height:100%;width:0;background:linear-gradient(90deg,#3ddc84,#ffd400 70%,#ff5a4f);transition:width .08s}
+.recui .pwrap{position:relative}.recui .cdn{position:absolute;inset:0;display:none;align-items:center;justify-content:center;font:900 110px/1 system-ui;color:#fff;text-shadow:0 4px 30px rgba(0,0,0,.7);background:rgba(0,0,0,.35);border-radius:12px}
+.recui .cdn.on{display:flex}
+.recui .tele{margin-top:8px}.recui .tele small{display:block;color:var(--acc);font-weight:800;font-size:11px;letter-spacing:1px;margin-top:6px}
+.recui .tele .now{font-size:17px;font-weight:700;line-height:1.35}.recui .tele .nxt{font-size:13px;color:var(--mut)}
 #cine .cbar{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
 .chip{min-width:40px;height:34px;border-radius:9px;background:var(--panel2);border:1px solid var(--line);color:var(--tx);font:700 14px system-ui;flex:none;cursor:pointer;padding:0 10px}
 .chip.on{background:var(--acc);color:var(--accd);border-color:var(--acc)}
@@ -2379,27 +2390,33 @@ async function makeVideo(o,onProg,opt={}){
    for(let k=0;k<texts.length;k++){status(`Ses hazırlanıyor ${k+1}/${texts.length}`); clips.push(texts[k]&&texts[k].trim()?await synthClip(ac,texts[k]):null);}
   }
   // zaman çizelgesi: ses süresine göre uzar, adımlar arasında bekleme yok
-  const MOVE=1700, baseHold=voice==='mic'?2000:voice==='auto'?250:700;
+  const MOVE=1700, baseHold=voice==='mic'?3000:voice==='auto'?250:700;
   const segs=[]; let T=0;
-  const introD=Math.max(2800, clips&&clips[0]?clips[0].duration*1000+400:0);
+  const introD=Math.max(voice==='mic'?4500:2800, clips&&clips[0]?clips[0].duration*1000+400:0);
   segs.push({k:'intro',t:T,d:introD,clip:clips&&clips[0]}); T+=introD;
   for(let i=0;i<n;i++){const c=clips&&clips[i+1]; const d=Math.max(baseHold+MOVE,c?c.duration*1000+350:0); segs.push({k:'step',i,t:T,d,hold:Math.min(baseHold,d-MOVE),clip:c}); T+=d;}
-  {const c=clips&&clips[n+1]; const d=Math.max(2600,c?c.duration*1000+800:0); segs.push({k:'end',t:T,d,clip:c}); T+=d;}
+  {const c=clips&&clips[n+1]; const d=Math.max(voice==='mic'?4000:2600,c?c.duration*1000+800:0); segs.push({k:'end',t:T,d,clip:c}); T+=d;}
   const total=T;
-  const drawAt=t=>{const s=segAt(segs,t); vidFrame(oc2,pc,W,H,o,stAt(s,t,MOVE),t/total); if(voice==='mic'&&micRec){oc2.fillStyle='#ff3b30'; oc2.beginPath(); oc2.arc(W-30,VTOP+24,9,0,Math.PI*2); oc2.fill();}};
+  let micBuf=null, micLevel=()=>0, micLive=false; const R=opt.rec||{};
+  const drawAt=t=>{const s=segAt(segs,t); vidFrame(oc2,pc,W,H,o,stAt(s,t,MOVE),t/total); if(voice==='mic'&&(micRec||micLive)){oc2.fillStyle='#ff3b30'; oc2.beginPath(); oc2.arc(W-30,VTOP+24,9,0,Math.PI*2); oc2.fill();}};
   drawAt(0);
   if(opt.preview){opt.preview.innerHTML=''; oc.style.cssText='position:static;width:100%;height:auto;border-radius:12px;display:block;margin-top:10px;background:#000'; opt.preview.appendChild(oc);}
   // Mikrofon: animasyon gerçek zamanlı oynar, yalnız ses kaydedilir
-  let micBuf=null;
+  const segIdx=t=>segs.indexOf(segAt(segs,t));
   if(voice==='mic'){
+   if(!(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia)) throw new Error('Bu cihazda mikrofon kaydı açılamadı. Uygulamaya mikrofon izni verip tekrar deneyin.');
    mic=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});
-   for(let c=3;c>0;c--){status(`Kayıt ${c} saniye içinde başlıyor — animasyonu izleyerek anlatın`); await new Promise(r=>setTimeout(r,1000));}
+   const an=ac.createAnalyser(); an.fftSize=512; ac.createMediaStreamSource(mic).connect(an); const lb=new Uint8Array(an.fftSize);
+   micLevel=()=>{an.getByteTimeDomainData(lb); let mx=0; for(let i=0;i<lb.length;i++) mx=Math.max(mx,Math.abs(lb[i]-128)); return mx/128;};
+   {const sc=narrationScript(o.title,o.desc,frameCaps(o.fr),o.kind||'tactic'); R.start&&R.start(total,[sc.intro,...sc.steps.map((x,i)=>x||o.fr[i].cap||''),sc.outro]);}
+   for(let c=3;c>0;c--){status(`Kayıt ${c} saniye içinde başlıyor`); R.count&&R.count(c); await new Promise(r=>setTimeout(r,1000));}
+   R.count&&R.count(0);
    if(vcfg){
     micRec=new MediaRecorder(mic); micRec.ondataavailable=e=>{if(e.data&&e.data.size) micChunks.push(e.data);};
     const stopped=new Promise(r=>micRec.onstop=r); micRec.start();
     status('Kayıt sürüyor — konuşun'); const t0=performance.now();
-    await new Promise(res=>{const tick=()=>{const t=performance.now()-t0; drawAt(Math.min(t,total)); onProg&&onProg(Math.min(1,t/total)*.5); if(t>=total){res();return;} requestAnimationFrame(tick);}; requestAnimationFrame(tick);});
-    micRec.stop(); await stopped; micRec=null;
+    await new Promise(res=>{const tick=()=>{const t=performance.now()-t0; drawAt(Math.min(t,total)); R.tick&&R.tick(Math.min(t,total),segIdx(Math.min(t,total-1)),micLevel()); onProg&&onProg(Math.min(1,t/total)*.5); if(t>=total){res();return;} requestAnimationFrame(tick);}; requestAnimationFrame(tick);});
+    micRec.stop(); await stopped; micRec=null; R.end&&R.end();
     try{micBuf=await ac.decodeAudioData(await new Blob(micChunks).arrayBuffer());}catch(e){throw new Error('Ses kaydı okunamadı: '+(e&&e.message||e));}
    }
   }
@@ -2429,18 +2446,19 @@ async function makeVideo(o,onProg,opt={}){
   // --- eski yol (WebCodecs yoksa): gerçek zamanlı kayıt ---
   const mime=pickMime(wantAudio); if(!mime) throw new Error('Bu cihaz video kaydını desteklemiyor');
   const dest=ac?ac.createMediaStreamDestination():null;
-  if(mic&&dest) ac.createMediaStreamSource(mic).connect(dest);
+  if(mic&&dest&&!micBuf) ac.createMediaStreamSource(mic).connect(dest);
   const vstream=oc.captureStream(30);
   const stream=new MediaStream([...vstream.getVideoTracks(),...(wantAudio&&dest?dest.stream.getAudioTracks():[])]);
   const rec=new MediaRecorder(stream,{mimeType:mime,videoBitsPerSecond:3000000,audioBitsPerSecond:128000}), chunks=[];
   rec.ondataavailable=e=>{if(e.data&&e.data.size) chunks.push(e.data);};
   const stopped=new Promise(r=>rec.onstop=r);
   if(/Chrome\//.test(navigator.userAgent)) rec.start(250); else rec.start();
-  const t0=performance.now();
+  const t0=performance.now(); micLive=voice==='mic'&&!micBuf;
+  if(micBuf&&dest){const sb=ac.createBufferSource(); sb.buffer=micBuf; sb.connect(dest); sb.start(); status('Video hazırlanıyor');}
   if(clips&&dest){const a0=ac.currentTime+0.03; segs.forEach(s=>{if(!s.clip) return; const src=ac.createBufferSource(); src.buffer=s.clip; src.connect(dest); src.connect(ac.destination); src.start(a0+s.t/1000);});}
-  status(voice==='mic'?'Kayıt sürüyor — konuşun':'Video kaydediliyor');
-  await new Promise(res=>{const tick=()=>{const t=performance.now()-t0; drawAt(Math.min(t,total)); onProg&&onProg(Math.min(1,t/total)); if(t>=total){res();return;} requestAnimationFrame(tick);}; requestAnimationFrame(tick);});
-  await new Promise(r=>setTimeout(r,200));
+  status(micLive?'Kayıt sürüyor — konuşun':'Video kaydediliyor');
+  await new Promise(res=>{const tick=()=>{const t=performance.now()-t0; drawAt(Math.min(t,total)); if(micLive&&R.tick) R.tick(Math.min(t,total),segIdx(Math.min(t,total-1)),micLevel()); onProg&&onProg(Math.min(1,t/total)); if(t>=total){res();return;} requestAnimationFrame(tick);}; requestAnimationFrame(tick);});
+  await new Promise(r=>setTimeout(r,200)); if(micLive) R.end&&R.end();
   rec.stop(); await stopped; vstream.getTracks().forEach(t=>t.stop());
   const type=mime.split(';')[0], ext=type.includes('mp4')?'mp4':'webm';
   return new File([new Blob(chunks,{type})],`${slug(o.title)}.${ext}`,{type});
@@ -2540,36 +2558,55 @@ function renderSbar(){
 }
 function voicePicker(){
  const auto=canAutoVoice(), mic=canMic();
- const def=S.vvoice&&((S.vvoice==='auto'&&auto)||(S.vvoice==='mic'&&mic)||S.vvoice==='none')?S.vvoice:(auto?'auto':'none');
+ const def=S.vvoice&&((S.vvoice==='auto'&&auto)||S.vvoice==='mic'||S.vvoice==='none')?S.vvoice:(auto?'auto':'none');
  return `<label>Videonun sesi</label><div class="seg" id="vsel">
   <button data-v="none" class="${def==='none'?'on':''}">Sessiz (yazılı)</button>
   <button data-v="auto" class="${def==='auto'?'on':''}" ${auto?'':'disabled style="opacity:.4"'}>Otomatik ses</button>
-  <button data-v="mic" class="${def==='mic'?'on':''}" ${mic?'':'disabled style="opacity:.4"'}>Kendi sesim</button></div>
+  <button data-v="mic" class="${def==='mic'?'on':''}">🎙 Kendi sesim</button></div>
   <p class="muted" id="vnote" style="margin:6px 0 0"></p><button class="pb sm" type="button" id="vsB" style="margin-top:6px">🎙 Anlatıcı sesini seç (erkek / kadın)</button>`;
 }
 function bindVoicePicker(m){
- const notes={none:'Adımlar videoda yazı olarak görünür.',auto:'Telefonun Türkçe sesi her adımı okur ve ses videoya kaydedilir.',mic:'Animasyon ekranda oynarken siz anlatırsınız, sesiniz videoya kaydedilir. Sessiz bir yerde kaydedin.'};
- const set=v=>{S.vvoice=v; persist(); m.querySelectorAll('#vsel button').forEach(b=>b.classList.toggle('on',b.dataset.v===v)); m.querySelector('#vnote').textContent=notes[v]+(!canAutoVoice()?' (Otomatik ses yalnızca telefondaki uygulamada çalışır.)':'');};
+ const notes={none:'Adımlar videoda yazı olarak görünür.',auto:'Telefonun Türkçe sesi her adımı okur ve ses videoya kaydedilir.',mic:'Gönder’e basınca 3-2-1 geri sayım başlar, ardından “● KAYIT” görünür. Ekranda ne anlatacağınız ve kalan süre yazar. Kayıt bitince dinleyip gönderirsiniz.'};
+ const set=v=>{S.vvoice=v; persist(); {const mk=m.querySelector('#mkV'); if(mk){ if(mk.dataset.l==null) mk.dataset.l=mk.innerHTML; mk.innerHTML=v==='mic'?'🎙 Kaydı başlat (3-2-1 geri sayım)':mk.dataset.l; }} m.querySelectorAll('#vsel button').forEach(b=>b.classList.toggle('on',b.dataset.v===v)); m.querySelector('#vnote').textContent=notes[v]+(!canAutoVoice()?' (Otomatik ses yalnızca telefondaki uygulamada çalışır.)':'');};
  m.querySelectorAll('#vsel button').forEach(b=>b.onclick=()=>{if(!b.disabled) set(b.dataset.v);});
  set(m.querySelector('#vsel button.on').dataset.v);
  const vb=m.querySelector('#vsB'); if(vb) vb.onclick=()=>openVoiceSettings();
 }
 function videoUI(m,jobs,text,autoShare){
  const box=m.querySelector('#vbox'), btn=m.querySelector('#mkV'), voice=(m.querySelector('#vsel button.on')||{dataset:{v:'none'}}).dataset.v;
+ const isMic=voice==='mic'; if(isMic) autoShare=false; // kendi sesinde önce dinle, sonra gönder
  btn.disabled=true; const files=[];
+ const fmt=ms=>{const s=Math.max(0,Math.round(ms/1000)); return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');};
  (async()=>{
   try{
    for(let k=0;k<jobs.length;k++){
-    box.innerHTML=`<div class="prog"><span id="pst">Video hazırlanıyor</span> · ${k+1}/${jobs.length}: ${esc(jobs[k].label)}<div class="bar"><i id="pbar"></i></div></div><div id="pprev"></div>`;
+    box.innerHTML=`<div class="prog"><span id="pst">Video hazırlanıyor</span>${jobs.length>1?` · ${k+1}/${jobs.length}`:''}: ${esc(jobs[k].label)}<div class="bar"><i id="pbar"></i></div></div>
+     ${isMic?`<div class="recui" id="recui"><div class="rtop"><span class="rbadge" id="rcB">HAZIRLAN</span><b id="rcT">00:00</b><span class="muted">/ <span id="rcTot">--:--</span></span><div class="lvl" title="Mikrofon seviyesi"><i id="rcL"></i></div></div>
+      <div class="pwrap"><div id="pprev"></div><div class="cdn" id="rcC"></div></div>
+      <div class="tele"><small>ŞİMDİ ANLATIN</small><div id="rcNow" class="now">Kayıt birazdan başlayacak. Sessiz bir yerde, telefonu ağzınıza yakın tutun.</div><small>SIRADAKİ</small><div id="rcNext" class="nxt"></div></div>
+      <p class="muted" style="margin:6px 0 0;font-size:12px">Yazılanları aynen okumak zorunda değilsiniz, kendi cümlelerinizle anlatın. Animasyon sizi bekleyecek şekilde ayarlandı.</p></div>`:'<div id="pprev"></div>'}`;
+    const $b=id=>box.querySelector('#'+id);
+    let lines=[], total=0;
+    const rec=isMic?{
+     start:(tot,ls)=>{total=tot; lines=ls; $b('rcTot').textContent=fmt(tot); $b('rcNow').textContent=ls[0]||''; $b('rcNext').textContent=ls[1]||'';},
+     count:n=>{const c=$b('rcC'); if(!c) return; c.textContent=n||''; c.classList.toggle('on',!!n); $b('rcB').textContent=n?'HAZIRLAN':'● KAYIT'; $b('rcB').classList.toggle('live',!n); if(n&&navigator.vibrate) navigator.vibrate(40);},
+     tick:(t,si,lv)=>{$b('rcT').textContent=fmt(t); $b('rcL').style.width=Math.min(100,Math.round(lv*180))+'%';
+      if(si!==rec._si){rec._si=si; $b('rcNow').textContent=lines[si]||''; $b('rcNext').textContent=lines[si+1]||'— Son —';}
+      const left=total-t; const B=$b('rcB'); if(left<4000&&left>0){B.textContent='● '+Math.ceil(left/1000)+' sn kaldı';} },
+     end:()=>{const B=$b('rcB'); B.textContent='✓ KAYIT BİTTİ'; B.classList.remove('live'); B.classList.add('done'); $b('rcNow').textContent='Kayıt tamamlandı. Video hazırlanıyor…'; $b('rcNext').textContent=''; $b('rcL').style.width='0'; if(navigator.vibrate) navigator.vibrate([60,60,60]);}
+    }:null;
     const f=await makeVideo(jobs[k].opts,p=>{const e=document.getElementById('pbar'); if(e) e.style.width=Math.round(p*100)+'%';},
-     {voice,preview:box.querySelector('#pprev'),status:t=>{const e=document.getElementById('pst'); if(e) e.textContent=t;}});
+     {voice,preview:box.querySelector('#pprev'),rec,status:t=>{const e=document.getElementById('pst'); if(e) e.textContent=t;}});
     files.push(f);
    }
    const webm=files.some(f=>f.type.includes('webm'));
    box.innerHTML=`<div class="vids">${files.map(f=>`<video src="${URL.createObjectURL(f)}" controls playsinline></video>`).join('')}</div>
-    <div class="prog">${files.length} video hazır · ${Math.round(files.reduce((a,f)=>a+f.size,0)/1048576*10)/10} MB · biçim: <b style="color:${webm?'var(--danger)':'var(--acc)'}">${webm?'WebM':'MP4 ✓'}</b>${voice!=='none'?' · sesli':''}${webm?'<br>Bu telefon MP4 üretemedi; WhatsApp videoyu belge olarak gönderebilir.':''}</div>
-    <button class="bigb wa" id="shV">${icon('wa')}${autoShare?'Tekrar WhatsApp’ta gönder':'Videoları WhatsApp’ta paylaş'}</button><div class="prog" id="shs"></div>`;
+    <div class="prog">${files.length} video hazır · ${Math.round(files.reduce((a,f)=>a+f.size,0)/1048576*10)/10} MB${files[0]&&files[0]._dur?' · '+fmt(files[0]._dur):''} · biçim: <b style="color:${webm?'var(--danger)':'var(--acc)'}">${webm?'WebM':'MP4 ✓'}</b>${voice==='mic'?' · sizin sesiniz':voice==='auto'?' · otomatik ses':''}${webm?'<br>Bu telefon MP4 üretemedi; WhatsApp videoyu belge olarak gönderebilir.':''}</div>
+    ${isMic?'<p class="muted" style="margin:4px 0">▶ ile kaydınızı dinleyin. Beğendiyseniz gönderin, beğenmediyseniz yeniden kaydedin.</p>':''}
+    <button class="bigb wa" id="shV">${icon('wa')}${autoShare?'Tekrar WhatsApp’ta gönder':'WhatsApp’ta gönder'}</button>
+    ${isMic?'<button class="bigb vid" id="reV" style="border-color:var(--line);height:44px;font-size:14px">↺ Yeniden kaydet</button>':''}<div class="prog" id="shs"></div>`;
    box.querySelector('#shV').onclick=()=>shareFiles(files,text);
+   const re=box.querySelector('#reV'); if(re) re.onclick=()=>videoUI(m,jobs,text,false);
    if(autoShare&&nativePlugin('Share')) shareFiles(files,text);
   }catch(e){
    const msg=(e&&e.name==='NotAllowedError')?'Mikrofon izni verilmedi. Telefon ayarlarından uygulamaya mikrofon izni verin.':(e&&e.message||String(e));
@@ -3665,6 +3702,7 @@ function openCoach(){
    else if(a==='watch'){closeModal(); fi=0; updateUI(); render2(); setTimeout(()=>play(false),300);}
    else if(a==='side'){send(v);}
    else if(a==='share'&&res){closeModal(); openTacticShare(res);}
+   else if(a==='micshare'&&res){S.vvoice='mic'; persist(); closeModal(); openTacticShare(res);}
    else if(a==='text'&&res){openWhatsApp(tacticNote(res));}
    else if(a==='ex'){ta.value=v; send();}
   };
@@ -3697,7 +3735,7 @@ function openCoach(){
     <div class="muted" style="margin-top:6px">Oyunun akışı:</div><div>${esc(res.steps.join(' → '))}</div>
     ${g?`<div class="muted" style="margin-top:6px">Oyuncu görevleri:</div><ul class="gor">${g}</ul>`:''}
     ${res.warn&&res.warn.length?'<div class="vtw">'+res.warn.map(esc).join('<br>')+'</div>':''}
-    <div class="row" style="margin-top:8px"><button class="pb pri sm" data-act="watch">▶ Videoyu izle (sesli)</button><button class="pb sm wa2" data-act="share">Oyunculara gönder (video + yazı)</button><button class="pb sm" data-act="text">Sadece yazı</button></div>`);
+    <div class="row" style="margin-top:8px"><button class="pb pri sm" data-act="watch">▶ Videoyu izle (sesli)</button><button class="pb sm wa2" data-act="share">Oyunculara gönder (video + yazı)</button><button class="pb sm" data-act="micshare">🎙 Kendi sesimle gönder</button><button class="pb sm" data-act="text">Sadece yazı</button></div>`);
   }
   m.querySelector('#cSend').onclick=()=>send();
   // ---- Canlı mini saha: tahtadaki oyuncular ve kurulan taktiğin animasyonu ----
